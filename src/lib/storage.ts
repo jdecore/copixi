@@ -1,0 +1,98 @@
+/**
+ * Copixi Storage — frontend-first persistence (§31, §32 Fase 5)
+ * InsForge-compatible local abstraction: no backend, no secrets,
+ * data stays in browser (§8). When InsForge SDK is added, swap impl.
+ */
+import type { Filter, ChartConfig } from '../data/types'
+
+export type SavedDataset = {
+  id: string
+  name: string
+  rowCount: number
+  columnCount: number
+  createdAt: string
+}
+
+export type SavedAnalysis = {
+  id: string
+  name: string
+  datasetName: string
+  filters: Filter[]
+  chartConfig: ChartConfig | null
+  createdAt: string
+  // snapshot aggregated metrics (no raw rows §8)
+  metricsSnapshot?: { totalSales: number; avgSales: number; rowCount: number }
+}
+
+export type Preferences = {
+  anomalyThreshold: number
+  anomalyMethod: 'zscore' | 'iqr'
+}
+
+const KEY_ANALYSES = 'copixi:saved_analyses'
+const KEY_DATASETS = 'copixi:saved_datasets'
+const KEY_PREFS = 'copixi:preferences'
+const KEY_HISTORY = 'copixi:history'
+
+function safeParse<T>(raw: string | null, fallback: T): T {
+  if (!raw) return fallback
+  try { return JSON.parse(raw) as T } catch { return fallback }
+}
+
+// Analyses
+export function getSavedAnalyses(): SavedAnalysis[] {
+  if (typeof localStorage === 'undefined') return []
+  return safeParse<SavedAnalysis[]>(localStorage.getItem(KEY_ANALYSES), [])
+}
+export function saveAnalysis(a: SavedAnalysis): void {
+  const list = getSavedAnalyses()
+  list.unshift(a)
+  if (list.length > 20) list.pop()
+  localStorage.setItem(KEY_ANALYSES, JSON.stringify(list))
+  appendHistory(`Saved analysis "${a.name}"`)
+}
+export function deleteAnalysis(id: string): void {
+  const list = getSavedAnalyses().filter((x) => x.id !== id)
+  localStorage.setItem(KEY_ANALYSES, JSON.stringify(list))
+}
+export function clearAnalyses(): void {
+  localStorage.removeItem(KEY_ANALYSES)
+}
+
+// Datasets (metadata only, no raw rows stored to respect §8 unless user explicitly saves)
+export function getSavedDatasets(): SavedDataset[] {
+  if (typeof localStorage === 'undefined') return []
+  return safeParse<SavedDataset[]>(localStorage.getItem(KEY_DATASETS), [])
+}
+export function saveDataset(d: SavedDataset): void {
+  const list = getSavedDatasets()
+  list.unshift(d)
+  if (list.length > 10) list.pop()
+  localStorage.setItem(KEY_DATASETS, JSON.stringify(list))
+}
+
+// Preferences (anomaly threshold, method)
+const DEFAULT_PREFS: Preferences = { anomalyThreshold: 2.5, anomalyMethod: 'zscore' }
+export function getPreferences(): Preferences {
+  if (typeof localStorage === 'undefined') return DEFAULT_PREFS
+  return safeParse<Preferences>(localStorage.getItem(KEY_PREFS), DEFAULT_PREFS)
+}
+export function savePreferences(p: Preferences): void {
+  localStorage.setItem(KEY_PREFS, JSON.stringify(p))
+}
+
+// History (lightweight event log)
+export function getHistory(): string[] {
+  if (typeof localStorage === 'undefined') return []
+  return safeParse<string[]>(localStorage.getItem(KEY_HISTORY), [])
+}
+export function appendHistory(entry: string): void {
+  const h = getHistory()
+  const line = `${new Date().toISOString().slice(0, 16).replace('T',' ')} — ${entry}`
+  h.unshift(line)
+  if (h.length > 50) h.pop()
+  localStorage.setItem(KEY_HISTORY, JSON.stringify(h))
+}
+export function clearHistory(): void {
+  localStorage.removeItem(KEY_HISTORY)
+}

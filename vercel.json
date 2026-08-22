@@ -1,0 +1,14 @@
+{
+  "framework": "vite",
+  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/gemini.ts": {
+      "includeFiles": "api/**"
+    },
+    "api/copilotkit.ts": {
+      "includeFiles": "api/**"
+    }
+  }
+}
