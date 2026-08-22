@@ -4,7 +4,7 @@ import { profileDataset } from '../data/profiler'
 import { computeMetrics } from '../data/statistics'
 import { applyFilters } from '../data/transformations'
 import { detectAnomaliesZScore } from '../data/anomalyDetection'
-import { toTimeSeries, toBarData } from '../data/chartAdapter'
+import { toTimeSeries, toBarData, suggestCharts } from '../data/chartAdapter'
 
 export type FileInfo = { name: string; size: number; rows: number; columns: number } | null
 
@@ -27,6 +27,7 @@ type DashboardDerived = {
   byCategory: { name: string; value: number }[]
   byProduct: { name: string; value: number }[]
   anomalies: ReturnType<typeof detectAnomaliesZScore>
+  autoCharts: { config: ChartConfig; data: { name: string; value: number }[] }[]
 }
 
 type DashboardActions = {
@@ -81,6 +82,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const byCategory = useMemo(() => (filteredRows.length ? toBarData(filteredRows, 'category', 'sales').slice(0, 6) : []), [filteredRows])
   const byProduct = useMemo(() => (filteredRows.length ? toBarData(filteredRows, 'product', 'sales').slice(0, 6) : []), [filteredRows])
   const anomalies = useMemo(() => (filteredRows.length ? detectAnomaliesZScore(filteredRows, 'sales', 2.5).slice(0, 5) : []), [filteredRows])
+  const autoCharts = useMemo(() => suggestCharts(columns, filteredRows), [columns, filteredRows])
 
   const setDataset = useCallback((rows: Row[], info: FileInfo) => {
     if (!rows.length) { setError('CSV is empty or has no valid rows. Try another file or use demo data.'); return }
@@ -119,7 +121,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   const value: DashboardContextValue = {
     rawRows, fileInfo, filters, activeChart, error, loading,
-    profile, columns, filteredRows, metrics, timeSeries, byCity, byCategory, byProduct, anomalies,
+    profile, columns, filteredRows, metrics, timeSeries, byCity, byCategory, byProduct, anomalies, autoCharts,
     setDataset, clearDataset, addFilter, removeFilter, clearFilters, setActiveChart, setError, setLoading,
   }
 

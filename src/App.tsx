@@ -88,8 +88,61 @@ function ActiveChartRenderer({ config, rows }: { config: { chartType: string; x:
   )
 }
 
+function AutoChartRenderer({ config, data }: { config: { chartType: string; x: string; y: string; title?: string }; data: { name: string; value: number }[] }) {
+  if (config.chartType === 'pie') {
+    const colors = ['#0f62fe', '#0e9f6e', '#c27803', '#e02424', '#64748b', '#8a2be2', '#00b4d8', '#ff6b6b']
+    return (
+      <ResponsiveContainer width="100%" height={260}>
+        <PieChart>
+          <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
+            {data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
+          </Pie>
+          <Tooltip />
+        </PieChart>
+      </ResponsiveContainer>
+    )
+  }
+  if (config.chartType === 'area') {
+    return (
+      <ResponsiveContainer width="100%" height={260}>
+        <AreaChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+          <YAxis tick={{ fontSize: 11 }} />
+          <Tooltip />
+          <Area type="monotone" dataKey="value" stroke="#0f172a" fill="#e2e8f0" strokeWidth={2} />
+        </AreaChart>
+      </ResponsiveContainer>
+    )
+  }
+  if (config.chartType === 'line') {
+    return (
+      <ResponsiveContainer width="100%" height={260}>
+        <LineChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+          <YAxis tick={{ fontSize: 11 }} />
+          <Tooltip />
+          <Line type="monotone" dataKey="value" stroke="#0f62fe" strokeWidth={2} dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    )
+  }
+  return (
+    <ResponsiveContainer width="100%" height={260}>
+      <BarChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+        <YAxis tick={{ fontSize: 11 }} />
+        <Tooltip />
+        <Bar dataKey="value" fill="#0f62fe" radius={[6, 6, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  )
+}
+
 function DashboardContent() {
-  const { rawRows, fileInfo, filteredRows, timeSeries, byCity, byCategory, byProduct, activeChart, setActiveChart, error, loading, setDataset, setError, setLoading, clearFilters, addFilter } = useDashboard()
+  const { rawRows, fileInfo, filteredRows, timeSeries, byCity, byProduct, activeChart, setActiveChart, error, loading, setDataset, setError, setLoading, clearFilters, addFilter, autoCharts } = useDashboard()
   const [dragging, setDragging] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -248,55 +301,27 @@ function DashboardContent() {
               <KPIGrid />
 
               {/* Primary charts */}
-              <div className="charts">
-                <ChartCard title="Sales over time (monthly)" icon="pixelart-icons-font-chart" empty={timeSeries.length ? null : 'No time series data — ensure a `date` column exists.'}>
-                  <ResponsiveContainer width="100%" height={260}>
-                    <AreaChart data={timeSeries}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip />
-                      <Area type="monotone" dataKey="value" stroke="#0f172a" fill="#e2e8f0" strokeWidth={2} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </ChartCard>
-                <ChartCard title="Sales by city" icon="pixelart-icons-font-chart-bar" empty={byCity.length ? null : 'No city data.'}>
-                  <ResponsiveContainer width="100%" height={260}>
-                    <BarChart data={byCity}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip />
-                      <Bar dataKey="value" fill="#0f62fe" radius={[6,6,0,0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartCard>
-              </div>
+              {autoCharts.length === 0 ? (
+                <div className="empty">No chartable columns detected. Ensure your CSV has at least one numeric or categorical column.</div>
+              ) : (
+                <div className="charts">
+                  {autoCharts.slice(0, 2).map((c) => (
+                    <ChartCard key={`${c.config.chartType}|${c.config.x}|${c.config.y}`} title={c.config.title ?? `${c.config.y} by ${c.config.x}`} icon="pixelart-icons-font-chart" empty={c.data.length ? null : 'No data for this chart.'}>
+                      <AutoChartRenderer config={c.config} data={c.data} />
+                    </ChartCard>
+                  ))}
+                </div>
+              )}
 
-              <div className="charts" style={{ marginTop: 16 }}>
-                <ChartCard title="Sales by category" icon="pixelart-icons-font-folder" empty={byCategory.length ? null : 'No category data.'}>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={byCategory}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip />
-                      <Bar dataKey="value" fill="#0e9f6e" radius={[6,6,0,0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartCard>
-                <ChartCard title="Sales by product" icon="pixelart-icons-font-trophy" empty={byProduct.length ? null : 'No product data.'}>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <LineChart data={byProduct}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="value" stroke="#0f62fe" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartCard>
-              </div>
+              {autoCharts.length > 2 && (
+                <div className="charts" style={{ marginTop: 16 }}>
+                  {autoCharts.slice(2, 6).map((c) => (
+                    <ChartCard key={`${c.config.chartType}|${c.config.x}|${c.config.y}`} title={c.config.title ?? `${c.config.y} by ${c.config.x}`} icon="pixelart-icons-font-chart" empty={c.data.length ? null : 'No data for this chart.'}>
+                      <AutoChartRenderer config={c.config} data={c.data} />
+                    </ChartCard>
+                  ))}
+                </div>
+              )}
 
               {activeChart && (
                 <div className="card" style={{ marginTop: 16, borderColor: 'var(--color-primary)', borderWidth: 1.5 }}>
