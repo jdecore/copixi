@@ -6,17 +6,14 @@ import { sortBy } from '../../data/transformations'
 const PAGE_SIZE = 10
 
 export function DataTable() {
-  const { filteredRows, columns } = useDashboard()
+  const { filteredRows, columns, sortCol, sortDir, setSort, searchQuery, setSearch } = useDashboard()
   const [page, setPage] = useState(0)
-  const [sortCol, setSortCol] = useState<string | null>(null)
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
-  const [query, setQuery] = useState('')
 
   const searched = useMemo(() => {
-    if (!query.trim()) return filteredRows
-    const q = query.toLowerCase()
+    if (!searchQuery.trim()) return filteredRows
+    const q = searchQuery.toLowerCase()
     return filteredRows.filter((r) => Object.values(r).some((v) => String(v ?? '').toLowerCase().includes(q)))
-  }, [filteredRows, query])
+  }, [filteredRows, searchQuery])
 
   const sorted = useMemo(() => {
     if (!sortCol) return searched
@@ -28,11 +25,11 @@ export function DataTable() {
   const pageRows = useMemo(() => sorted.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE), [sorted, currentPage])
 
   const handleSort = (col: string) => {
-    if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    else { setSortCol(col); setSortDir('asc') }
+    if (sortCol === col) setSort(col, sortDir === 'asc' ? 'desc' : 'asc')
+    else setSort(col, 'asc')
   }
 
-  if (!filteredRows.length && !query) {
+  if (!filteredRows.length && !searchQuery) {
     return <div className="empty">No rows — adjust filters.</div>
   }
 
@@ -44,8 +41,8 @@ export function DataTable() {
           <input
             className="filter-input"
             placeholder="Search all columns…"
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); setPage(0) }}
+            value={searchQuery}
+            onChange={(e) => { setSearch(e.target.value); setPage(0) }}
             aria-label="Search table"
             style={{ minWidth: 220 }}
           />
@@ -86,7 +83,7 @@ export function DataTable() {
       </div>
 
       {sorted.length === 0 && (
-        <div className="empty" style={{ marginTop: 12 }}>No matching rows for “{query}”.</div>
+        <div className="empty" style={{ marginTop: 12 }}>No matching rows for “{searchQuery}”.</div>
       )}
 
       <div className="pagination" role="navigation" aria-label="Pagination">

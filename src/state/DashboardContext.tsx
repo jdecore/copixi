@@ -15,6 +15,9 @@ type DashboardState = {
   activeChart: ChartConfig | null
   error: string | null
   loading: boolean
+  sortCol: string | null
+  sortDir: 'asc' | 'desc'
+  searchQuery: string
 }
 
 type DashboardDerived = {
@@ -28,6 +31,10 @@ type DashboardDerived = {
   byProduct: { name: string; value: number }[]
   anomalies: ReturnType<typeof detectAnomaliesZScore>
   autoCharts: { config: ChartConfig; data: { name: string; value: number }[] }[]
+  nullPercentages: Record<string, number>
+  dateRange: { min: string; max: string } | null
+  topCategories: Record<string, { name: string; value: number }[]>
+  suggestedQuestions: string[]
 }
 
 type DashboardActions = {
@@ -39,6 +46,8 @@ type DashboardActions = {
   setActiveChart: (c: ChartConfig | null) => void
   setError: (msg: string | null) => void
   setLoading: (v: boolean) => void
+  setSort: (col: string | null, dir?: 'asc' | 'desc') => void
+  setSearch: (query: string) => void
 }
 
 type DashboardContextValue = DashboardState & DashboardDerived & DashboardActions
@@ -69,6 +78,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [activeChart, setActiveChart] = useState<ChartConfig | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [sortCol, setSortCol] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const profile = useMemo(() => (rawRows ? profileDataset(rawRows) : null), [rawRows])
   const columns = useMemo(() => profile?.columns ?? [], [profile])
@@ -76,7 +88,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   const filteredRows = useMemo(() => (rawRows ? applyFilters(rawRows, filters) : []), [rawRows, filters])
   const metrics = useMemo(() => (filteredRows.length ? computeMetrics(filteredRows) : rawRows ? computeMetrics(filteredRows) : null), [filteredRows, rawRows])
-  // For metrics when no filtered rows but raw exists with filters that yield 0, keep 0 metrics
   const timeSeries = useMemo(() => (filteredRows.length ? toTimeSeries(filteredRows, 'date', 'sales') : []), [filteredRows])
   const byCity = useMemo(() => (filteredRows.length ? toBarData(filteredRows, 'city', 'sales').slice(0, 6) : []), [filteredRows])
   const byCategory = useMemo(() => (filteredRows.length ? toBarData(filteredRows, 'category', 'sales').slice(0, 6) : []), [filteredRows])
@@ -84,12 +95,63 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const anomalies = useMemo(() => (filteredRows.length ? detectAnomaliesZScore(filteredRows, 'sales', 2.5).slice(0, 5) : []), [filteredRows])
   const autoCharts = useMemo(() => suggestCharts(columns, filteredRows), [columns, filteredRows])
 
+  const nullPercentages = useMemo(() => {
+    if (!profile) return {}
+    const out: Record<string, number> = {}
+    for (const c of profile.columns) {
+      out[c.name] = profile.rowCount > 0 ? Math.round((c.nullCount / profile.rowCount) * 100) : 0
+    }
+    return out
+  }, [profile])
+
+  const dateRange = useMemo(() => {
+    if (!rawRows) return null
+    const dates = rawRows.map((r) => String(r['date'] ?? '')).filter((s) => !Number.isNaN(Date.parse(s)) && /\d{4}-\d{2}-\d{2}/.test(s))
+    if (!dates.length) return null
+    dates.sort()
+    return { min: dates[0], max: dates[dates.length - 1] }
+  }, [rawRows])
+
+  const topCategories = useMemo(() => {
+    if (!columns.length || !filteredRows.length) return {}
+    const out: Record<string, { name: string; value: number }[]> = {}
+    const catCols = columns.filter((c) => c.type === 'string' && c.distinctCount >= 2 && c.distinctCount <= 20)
+    for (const c of catCols.slice(0, 5)) {
+      out[c.name] = toBarData(filteredRows, c.name, 'sales').slice(0, 5)
+    }
+    return out
+  }, [columns, filteredRows])
+
+  const suggestedQuestions = useMemo(() => {
+    if (!columns.length) return []
+    const qs: string[] = []
+    const numCols = columns.filter((c) => c.type === 'number')
+    const catCols = columns.filter((c) => c.type === 'string' && c.distinctCount >= 2 && c.distinctCount <= 20)
+    const dateCols = columns.filter((c) => c.type === 'date')
+    if (catCols.length && numCols.length) {
+      qs.push(`Show ${numCols[0].name} by ${catCols[0].name} in a bar chart`)
+    }
+    if (dateCols.length && numCols.length) {
+      qs.push(`Show ${numCols[0].name} trend over ${dateCols[0].name}`)
+    }
+    if (catCols.length >= 2) {
+      qs.push(`Compare ${catCols[0].name} vs ${catCols[1].name} by ${numCols[0]?.name ?? 'sales'}`)
+    }
+    if (catCols.length) {
+      qs.push(`Filter ${catCols[0].name} equals ${catCols[0].sampleValues[0] ?? 'value'}`)
+    }
+    return qs.slice(0, 5)
+  }, [columns])
+
   const setDataset = useCallback((rows: Row[], info: FileInfo) => {
     if (!rows.length) { setError('CSV is empty or has no valid rows. Try another file or use demo data.'); return }
     setRawRows(rows)
     setFileInfo(info)
     setFilters([])
     setActiveChart(null)
+    setSortCol(null)
+    setSortDir('asc')
+    setSearchQuery('')
     setError(null)
   }, [])
 
@@ -98,6 +160,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setFileInfo(null)
     setFilters([])
     setActiveChart(null)
+    setSortCol(null)
+    setSortDir('asc')
+    setSearchQuery('')
     setError(null)
   }, [])
 
@@ -119,10 +184,20 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   const clearFilters = useCallback(() => setFilters([]), [])
 
+  const setSort = useCallback((col: string | null, dir?: 'asc' | 'desc') => {
+    setSortCol(col)
+    setSortDir(dir ?? (col ? 'asc' : 'asc'))
+  }, [])
+
+  const setSearch = useCallback((query: string) => {
+    setSearchQuery(query)
+  }, [])
+
   const value: DashboardContextValue = {
-    rawRows, fileInfo, filters, activeChart, error, loading,
+    rawRows, fileInfo, filters, activeChart, error, loading, sortCol, sortDir, searchQuery,
     profile, columns, filteredRows, metrics, timeSeries, byCity, byCategory, byProduct, anomalies, autoCharts,
-    setDataset, clearDataset, addFilter, removeFilter, clearFilters, setActiveChart, setError, setLoading,
+    nullPercentages, dateRange, topCategories, suggestedQuestions,
+    setDataset, clearDataset, addFilter, removeFilter, clearFilters, setActiveChart, setError, setLoading, setSort, setSearch,
   }
 
   return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>
