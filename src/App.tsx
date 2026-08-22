@@ -213,11 +213,11 @@ function DashboardContent() {
             onDragLeave={() => setDragging(false)}
             onDrop={onDrop}
             role="region"
-            aria-label="Upload CSV"
+            aria-label="Upload CSV or TSV"
           >
-            <h3><i className="pixelart-icons-font-file" aria-hidden /> Drag & drop your CSV here</h3>
-            <p>or click to browse — max 15 MB, .csv only</p>
-            <input ref={inputRef} type="file" accept=".csv,text/csv" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f) }} />
+            <h3><i className="pixelart-icons-font-file" aria-hidden /> Drag & drop your CSV or TSV here</h3>
+            <p>or click to browse — max 15 MB, .csv / .tsv</p>
+            <input ref={inputRef} type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f) }} />
             <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={() => inputRef.current?.click()} type="button">Choose file</button>
             {fileInfo && <div className="file-meta"><span>{fileInfo.name}</span><span>{formatBytes(fileInfo.size)}</span><span>{fileInfo.rows} rows</span><span>{fileInfo.columns} cols</span></div>}
             {loading && <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center' }}><span className="skeleton" style={{ width: 120 }} /> <span className="skeleton" style={{ width: 80 }} /></div>}

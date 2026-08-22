@@ -15,15 +15,18 @@ export type ParseOptions = {
 
 /**
  * Papa Parse wrapper — pure, client-side, no LLM.
- * Validates CSV type, size and content.
+ * Validates CSV/TSV type, size and content. Auto-detects delimiter.
  */
 export function parseCSV(input: File | string, options: ParseOptions = {}): Promise<ParseResult> {
   const { header = true, skipEmptyLines = true } = options;
+  const isTsvFile = input instanceof File && input.name.toLowerCase().endsWith(".tsv");
+  const isTsvString = typeof input === "string" && input.includes("\t") && !input.slice(0, 2048).includes(",");
 
   return new Promise((resolve, reject) => {
     Papa.parse<Row>(input as unknown as string, {
       header,
       skipEmptyLines,
+      delimiter: isTsvFile || isTsvString ? "\t" : "",
       dynamicTyping: false, // keep strings, infer later via profiler
       transformHeader: (h) => h.trim(),
       complete: (results) => {
@@ -40,8 +43,15 @@ export function parseCSV(input: File | string, options: ParseOptions = {}): Prom
 }
 
 export function validateFile(file: File, maxSizeMB = 15): { valid: boolean; error?: string } {
-  if (!file.name.toLowerCase().endsWith(".csv") && file.type !== "text/csv" && file.type !== "application/vnd.ms-excel") {
-    return { valid: false, error: "Invalid file type. Only .csv is allowed." };
+  const name = file.name.toLowerCase();
+  const isCsv = name.endsWith(".csv") || name.endsWith(".tsv");
+  const allowedTypes = new Set(["text/csv", "text/tab-separated-values", "application/vnd.ms-excel", "text/plain", ""]);
+  if (!isCsv && !allowedTypes.has(file.type)) {
+    return { valid: false, error: "Invalid file type. Only .csv and .tsv are allowed." };
+  }
+  if (!isCsv) {
+    // fallback: if name doesn't end with .csv/.tsv, still reject
+    return { valid: false, error: "Invalid file type. Only .csv and .tsv are allowed." };
   }
   if (file.size === 0) return { valid: false, error: "File is empty." };
   if (file.size > maxSizeMB * 1024 * 1024) {
