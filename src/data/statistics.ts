@@ -6,17 +6,27 @@ export function sum(rows: Row[], column: string): number {
 
 export function avg(rows: Row[], column: string): number {
   if (rows.length === 0) return 0;
-  return sum(rows, column) / rows.length;
+  const vals = rows.map((r) => Number(r[column])).filter((n) => !Number.isNaN(n));
+  if (!vals.length) return 0;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
 }
 
 export function minVal(rows: Row[], column: string): number {
-  const nums = rows.map((r) => Number(r[column])).filter((n) => !Number.isNaN(n));
-  return nums.length ? Math.min(...nums) : 0;
+  let min = Infinity;
+  for (const r of rows) {
+    const n = Number(r[column]);
+    if (!Number.isNaN(n) && n < min) min = n;
+  }
+  return min === Infinity ? 0 : min;
 }
 
 export function maxVal(rows: Row[], column: string): number {
-  const nums = rows.map((r) => Number(r[column])).filter((n) => !Number.isNaN(n));
-  return nums.length ? Math.max(...nums) : 0;
+  let max = -Infinity;
+  for (const r of rows) {
+    const n = Number(r[column]);
+    if (!Number.isNaN(n) && n > max) max = n;
+  }
+  return max === -Infinity ? 0 : max;
 }
 
 export function median(rows: Row[], column: string): number {

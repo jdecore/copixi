@@ -128,6 +128,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     const numCols = columns.filter((c) => c.type === 'number')
     const catCols = columns.filter((c) => c.type === 'string' && c.distinctCount >= 2 && c.distinctCount <= 20)
     const dateCols = columns.filter((c) => c.type === 'date')
+    const hasFilters = filters.length > 0
     if (catCols.length && numCols.length) {
       qs.push(`Show ${numCols[0].name} by ${catCols[0].name} in a bar chart`)
     }
@@ -137,11 +138,14 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     if (catCols.length >= 2) {
       qs.push(`Compare ${catCols[0].name} vs ${catCols[1].name} by ${numCols[0]?.name ?? 'sales'}`)
     }
-    if (catCols.length) {
-      qs.push(`Filter ${catCols[0].name} equals ${catCols[0].sampleValues[0] ?? 'value'}`)
+    if (hasFilters) {
+      qs.push('Clear all filters')
+    }
+    if (anomalies.length) {
+      qs.push('Show anomalies in detail')
     }
     return qs.slice(0, 5)
-  }, [columns])
+  }, [columns, filters.length, anomalies.length])
 
   const setDataset = useCallback((rows: Row[], info: FileInfo) => {
     if (!rows.length) { setError('CSV is empty or has no valid rows. Try another file or use demo data.'); return }

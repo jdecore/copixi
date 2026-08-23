@@ -53,8 +53,15 @@ export function groupBy(
     if (agg === "sum") value = vals.reduce((a, b) => a + b, 0);
     else if (agg === "avg") value = vals.reduce((a, b) => a + b, 0) / vals.length;
     else if (agg === "count") value = vals.length;
-    else if (agg === "min") value = Math.min(...vals);
-    else if (agg === "max") value = Math.max(...vals);
+    else if (agg === "min") {
+      let mn = Infinity;
+      for (const v of vals) if (v < mn) mn = v;
+      value = mn === Infinity ? 0 : mn;
+    } else if (agg === "max") {
+      let mx = -Infinity;
+      for (const v of vals) if (v > mx) mx = v;
+      value = mx === -Infinity ? 0 : mx;
+    }
     out.push({ key, value });
   }
   return out.sort((a, b) => b.value - a.value);

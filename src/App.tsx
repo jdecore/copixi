@@ -21,10 +21,12 @@ import { HireBanner } from './components/ui/HireBanner'
 import { ShareBar } from './components/dashboard/ShareBar'
 import { TrustBar } from './components/ui/TrustBar'
 import { CommandPalette } from './components/ui/CommandPalette'
+import { Mascota } from './components/ui/Mascota'
 import { lazy, Suspense } from 'react'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import type { SavedAnalysis } from './lib/storage'
 import { saveDataset } from './lib/storage'
+import type { MascotaMood } from './types/mascota'
 
 const CopilotPanel = lazy(() => import('./components/copilot/CopilotPanel').then((m) => ({ default: m.CopilotPanel })))
 
@@ -34,12 +36,11 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function ActiveChartRenderer({ config, rows }: { config: { chartType: string; x: string; y: string }; rows: ReturnType<typeof useDashboard>['filteredRows'] }) {
-  const data = toBarData(rows, config.x, config.y).slice(0, 8)
-  const colors = ['#0f62fe', '#0e9f6e', '#c27803', '#e02424', '#64748b']
+function ChartRenderer({ config, data, height = 260 }: { config: { chartType: string; x: string; y: string; title?: string }; data: { name: string; value: number }[]; height?: number }) {
+  const colors = ['#0f62fe', '#0e9f6e', '#c27803', '#e02424', '#64748b', '#8a2be2', '#00b4d8', '#ff6b6b']
   if (config.chartType === 'pie') {
     return (
-      <ResponsiveContainer width="100%" height={260}>
+      <ResponsiveContainer width="100%" height={height}>
         <PieChart>
           <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
             {data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
@@ -51,7 +52,7 @@ function ActiveChartRenderer({ config, rows }: { config: { chartType: string; x:
   }
   if (config.chartType === 'area') {
     return (
-      <ResponsiveContainer width="100%" height={260}>
+      <ResponsiveContainer width="100%" height={height}>
         <AreaChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -64,7 +65,7 @@ function ActiveChartRenderer({ config, rows }: { config: { chartType: string; x:
   }
   if (config.chartType === 'line') {
     return (
-      <ResponsiveContainer width="100%" height={260}>
+      <ResponsiveContainer width="100%" height={height}>
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -76,60 +77,7 @@ function ActiveChartRenderer({ config, rows }: { config: { chartType: string; x:
     )
   }
   return (
-    <ResponsiveContainer width="100%" height={260}>
-      <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-        <YAxis tick={{ fontSize: 11 }} />
-        <Tooltip />
-        <Bar dataKey="value" fill="#0f62fe" radius={[6, 6, 0, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
-  )
-}
-
-function AutoChartRenderer({ config, data }: { config: { chartType: string; x: string; y: string; title?: string }; data: { name: string; value: number }[] }) {
-  if (config.chartType === 'pie') {
-    const colors = ['#0f62fe', '#0e9f6e', '#c27803', '#e02424', '#64748b', '#8a2be2', '#00b4d8', '#ff6b6b']
-    return (
-      <ResponsiveContainer width="100%" height={260}>
-        <PieChart>
-          <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
-            {data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
-          </Pie>
-          <Tooltip />
-        </PieChart>
-      </ResponsiveContainer>
-    )
-  }
-  if (config.chartType === 'area') {
-    return (
-      <ResponsiveContainer width="100%" height={260}>
-        <AreaChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-          <YAxis tick={{ fontSize: 11 }} />
-          <Tooltip />
-          <Area type="monotone" dataKey="value" stroke="#0f172a" fill="#e2e8f0" strokeWidth={2} />
-        </AreaChart>
-      </ResponsiveContainer>
-    )
-  }
-  if (config.chartType === 'line') {
-    return (
-      <ResponsiveContainer width="100%" height={260}>
-        <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-          <YAxis tick={{ fontSize: 11 }} />
-          <Tooltip />
-          <Line type="monotone" dataKey="value" stroke="#0f62fe" strokeWidth={2} dot={false} />
-        </LineChart>
-      </ResponsiveContainer>
-    )
-  }
-  return (
-    <ResponsiveContainer width="100%" height={260}>
+    <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data}>
         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
         <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -145,14 +93,16 @@ function DashboardContent() {
   const { rawRows, fileInfo, filteredRows, timeSeries, byCity, byProduct, activeChart, setActiveChart, error, loading, setDataset, setError, setLoading, clearFilters, addFilter, autoCharts } = useDashboard()
   const [dragging, setDragging] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
+  const [mascotaMood, setMascotaMood] = useState<MascotaMood>('neutro')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const hasData = !!rawRows
 
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<SavedAnalysis>).detail
       if (!detail) return
       clearFilters()
-      // defer to allow clear to propagate
       setTimeout(() => {
         for (const f of detail.filters) addFilter(f as never)
         if (detail.chartConfig) setActiveChart(detail.chartConfig)
@@ -163,6 +113,22 @@ function DashboardContent() {
     window.addEventListener('copixi:restore-analysis', handler as EventListener)
     return () => window.removeEventListener('copixi:restore-analysis', handler as EventListener)
   }, [addFilter, clearFilters, setActiveChart])
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<MascotaMood>).detail
+      if (detail) setMascotaMood(detail)
+    }
+    window.addEventListener('copixi:mascota-mood', handler as EventListener)
+    return () => window.removeEventListener('copixi:mascota-mood', handler as EventListener)
+  }, [])
+
+  useEffect(() => {
+    if (loading) setMascotaMood('duda')
+    else if (error) setMascotaMood('enojado')
+    else if (hasData) setMascotaMood('feliz')
+    else setMascotaMood('neutro')
+  }, [loading, error, hasData])
 
   const handleRows = useCallback((rows: ReturnType<typeof useDashboard>['filteredRows'], name: string, size: number) => {
     // raw rows passed as filteredRows type but actually raw
@@ -204,13 +170,17 @@ function DashboardContent() {
     } finally { setLoading(false) }
   }, [handleRows, setError, setLoading])
 
+  useEffect(() => {
+    const handler = () => handleDemo()
+    window.addEventListener('copixi:try-demo', handler)
+    return () => window.removeEventListener('copixi:try-demo', handler)
+  }, [handleDemo])
+
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault(); setDragging(false)
     const file = e.dataTransfer.files?.[0]
     if (file) parseFile(file)
   }, [parseFile])
-
-  const hasData = !!rawRows
 
   return (
     <>
@@ -224,6 +194,11 @@ function DashboardContent() {
             <span style={{ fontWeight: 400, color: 'var(--color-muted)', fontSize: 12, border: '1px solid var(--color-border)', padding: '2px 6px', borderRadius: 999 }}>AI Data Analyst</span>
           </div>
           <nav className="nav" aria-label="Main navigation" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            {hasData && (
+              <button className="btn btn-secondary small" onClick={() => inputRef.current?.click()} type="button">
+                <i className="pixelart-icons-font-upload" aria-hidden /> New dataset
+              </button>
+            )}
             <a href="#overview">Overview</a>
             <a href="#main-content">Dashboard</a>
             <CommandPalette />
@@ -232,49 +207,57 @@ function DashboardContent() {
       </header>
 
       <main className="main" id="main-content">
-        <section className="landing" aria-labelledby="headline" id="overview">
-          <h1 id="headline">Your AI Data Analyst</h1>
-          <p className="sub">Turn raw business data into clear decisions.</p>
-          <div className="cta-row">
-            <button className="btn btn-primary" onClick={() => inputRef.current?.click()} type="button">
-              <i className="pixelart-icons-font-upload" aria-hidden /> Analyze your data
-            </button>
-            <button className="btn btn-secondary" onClick={handleDemo} type="button" disabled={loading}>
-              <i className="pixelart-icons-font-play" aria-hidden /> {loading ? 'Loading…' : 'Try demo data'}
-            </button>
-            <Dialog.Root>
-              <Dialog.Trigger asChild>
-                <button className="btn btn-secondary" type="button"><i className="pixelart-icons-font-info" aria-hidden /> How it works</button>
-              </Dialog.Trigger>
-              <Dialog.Portal>
-                <Dialog.Overlay style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)' }} />
-                <Dialog.Content aria-describedby={undefined} style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', background: 'white', borderRadius: 12, padding: 24, maxWidth: 480, width: '90vw', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}>
-                  <Dialog.Title style={{ margin: 0, fontWeight: 700 }}>How Copixi works</Dialog.Title>
-                  <Dialog.Description style={{ color: 'var(--color-muted)', fontSize: 14, marginTop: 8 }}>
-                    Your data stays in your browser whenever possible (Papa Parse + local engine). The AI only receives aggregated context, never full rows.
-                  </Dialog.Description>
-                  <p style={{ fontSize: 13, marginTop: 12 }}>Flow: Landing → Upload/Demo → Profiling → KPIs + Charts → Filters → AI Analyst (validated actions).</p>
-                  <Dialog.Close asChild><button className="btn btn-primary" style={{ marginTop: 16 }} type="button">Got it</button></Dialog.Close>
-                </Dialog.Content>
-              </Dialog.Portal>
-            </Dialog.Root>
-          </div>
+        <section className={`landing ${hasData ? 'landing-hidden' : ''}`} aria-labelledby="headline" id="overview">
+          <div className="landing-grid">
+            <div className="landing-left">
+              <h1 id="headline">Your AI Data Analyst</h1>
+              <p className="sub">Turn raw business data into clear decisions.</p>
+              <div className="cta-row">
+                <button className="btn btn-primary" onClick={() => inputRef.current?.click()} type="button">
+                  <i className="pixelart-icons-font-upload" aria-hidden /> Analyze your data
+                </button>
+                <button className="btn btn-secondary" onClick={handleDemo} type="button" disabled={loading}>
+                  <i className="pixelart-icons-font-play" aria-hidden /> {loading ? 'Loading…' : 'Try demo data'}
+                </button>
+                <Dialog.Root>
+                  <Dialog.Trigger asChild>
+                    <button className="btn btn-secondary" type="button"><i className="pixelart-icons-font-info" aria-hidden /> How it works</button>
+                  </Dialog.Trigger>
+                  <Dialog.Portal>
+                    <Dialog.Overlay style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)' }} />
+                    <Dialog.Content aria-describedby={undefined} style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', background: 'white', borderRadius: 12, padding: 24, maxWidth: 480, width: '90vw', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}>
+                      <Dialog.Title style={{ margin: 0, fontWeight: 700 }}>How Copixi works</Dialog.Title>
+                      <Dialog.Description style={{ color: 'var(--color-muted)', fontSize: 14, marginTop: 8 }}>
+                        Your data stays in your browser whenever possible (Papa Parse + local engine). The AI only receives aggregated context, never full rows.
+                      </Dialog.Description>
+                      <p style={{ fontSize: 13, marginTop: 12 }}>Flow: Landing → Upload/Demo → Profiling → KPIs + Charts → Filters → AI Analyst (validated actions).</p>
+                      <Dialog.Close asChild><button className="btn btn-primary" style={{ marginTop: 16 }} type="button">Got it</button></Dialog.Close>
+                    </Dialog.Content>
+                  </Dialog.Portal>
+                </Dialog.Root>
+              </div>
 
-          <div
-            className={`upload ${dragging ? 'dragging' : ''}`}
-            onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            role="region"
-            aria-label="Upload CSV or TSV"
-          >
-            <h3><i className="pixelart-icons-font-file" aria-hidden /> Drag & drop your CSV or TSV here</h3>
-            <p>or click to browse — max 15 MB, .csv / .tsv</p>
-            <input ref={inputRef} type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f) }} />
-            <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={() => inputRef.current?.click()} type="button">Choose file</button>
-            {fileInfo && <div className="file-meta"><span>{fileInfo.name}</span><span>{formatBytes(fileInfo.size)}</span><span>{fileInfo.rows} rows</span><span>{fileInfo.columns} cols</span></div>}
-            {loading && <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center' }}><span className="skeleton" style={{ width: 120 }} /> <span className="skeleton" style={{ width: 80 }} /></div>}
-            {error && <div role="alert" style={{ marginTop: 12, color: 'var(--color-danger)', fontSize: 13, background: '#fef2f2', border: '1px solid #fecaca', padding: '8px 12px', borderRadius: 8, display: 'inline-block' }}>{error} — try another file or <button onClick={handleDemo} style={{ textDecoration: 'underline', background: 'none', border: 0, cursor: 'pointer', color: 'inherit', fontWeight: 600 }}>use demo data</button></div>}
+              <div
+                className={`upload ${dragging ? 'dragging' : ''}`}
+                onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={onDrop}
+                role="region"
+                aria-label="Upload CSV or TSV"
+              >
+                <h3><i className="pixelart-icons-font-file" aria-hidden /> Drag & drop your CSV or TSV here</h3>
+                <p>or click to browse — max 15 MB, .csv / .tsv</p>
+                <input ref={inputRef} type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f) }} />
+                <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={() => inputRef.current?.click()} type="button">Choose file</button>
+                {fileInfo && <div className="file-meta"><span>{fileInfo.name}</span><span>{formatBytes(fileInfo.size)}</span><span>{fileInfo.rows} rows</span><span>{fileInfo.columns} cols</span></div>}
+                {loading && <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center' }}><span className="skeleton" style={{ width: 120 }} /> <span className="skeleton" style={{ width: 80 }} /></div>}
+                {error && <div role="alert" style={{ marginTop: 12, color: 'var(--color-danger)', fontSize: 13, background: '#fef2f2', border: '1px solid #fecaca', padding: '8px 12px', borderRadius: 8, display: 'inline-block' }}>{error} — try another file or <button onClick={handleDemo} style={{ textDecoration: 'underline', background: 'none', border: 0, cursor: 'pointer', color: 'inherit', fontWeight: 600 }}>use demo data</button></div>}
+              </div>
+            </div>
+
+            <div className="landing-right">
+              <Mascota mood={mascotaMood} subtitulo={loading ? 'Analizando…' : error ? 'Algo salió mal' : hasData ? '¡Datos cargados!' : '¡Sube tu CSV o prueba el demo!'} />
+            </div>
           </div>
         </section>
 
@@ -307,7 +290,7 @@ function DashboardContent() {
                 <div className="charts">
                   {autoCharts.slice(0, 2).map((c) => (
                     <ChartCard key={`${c.config.chartType}|${c.config.x}|${c.config.y}`} title={c.config.title ?? `${c.config.y} by ${c.config.x}`} icon="pixelart-icons-font-chart" empty={c.data.length ? null : 'No data for this chart.'}>
-                      <AutoChartRenderer config={c.config} data={c.data} />
+                      <ChartRenderer config={c.config} data={c.data} />
                     </ChartCard>
                   ))}
                 </div>
@@ -317,7 +300,7 @@ function DashboardContent() {
                 <div className="charts" style={{ marginTop: 16 }}>
                   {autoCharts.slice(2, 6).map((c) => (
                     <ChartCard key={`${c.config.chartType}|${c.config.x}|${c.config.y}`} title={c.config.title ?? `${c.config.y} by ${c.config.x}`} icon="pixelart-icons-font-chart" empty={c.data.length ? null : 'No data for this chart.'}>
-                      <AutoChartRenderer config={c.config} data={c.data} />
+                      <ChartRenderer config={c.config} data={c.data} />
                     </ChartCard>
                   ))}
                 </div>
@@ -326,7 +309,7 @@ function DashboardContent() {
               {activeChart && (
                 <div className="card" style={{ marginTop: 16, borderColor: 'var(--color-primary)', borderWidth: 1.5 }}>
                   <h3><i className="pixelart-icons-font-chart" aria-hidden /> AI Chart — {activeChart.chartType} ({activeChart.x} → {activeChart.y})</h3>
-                  <ActiveChartRenderer config={activeChart} rows={filteredRows} />
+                  <ChartRenderer config={activeChart} data={toBarData(filteredRows, activeChart.x, activeChart.y).slice(0, 8)} />
                   <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
                     <span className="filter-count">Set via AI action setChart</span>
                     <button className="btn btn-secondary small" onClick={() => setActiveChart(null)} type="button">Dismiss</button>

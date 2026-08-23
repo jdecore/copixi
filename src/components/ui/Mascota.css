@@ -1,0 +1,248 @@
+/* CERI — Mascota CSS pura, tema-agnóstica, sin imágenes/CDNs */
+
+:root {
+  --vela-bg: #FFF8F0;
+  --vela-accent: #D4A017;
+  --mascota-size: min(180px, 45vw);
+  --mascota-skin: #f5e6c8;
+  --mascota-skin-dark: #e8d5a8;
+  --mascota-blush: rgba(248, 164, 164, 0.6);
+  --mascota-eye: #1a1a1a;
+  --mascota-pupil: #ffffff;
+}
+
+#mascota {
+  --mouse-x: 0px;
+  --mouse-y: 0px;
+  width: var(--mascota-size);
+  height: var(--mascota-size);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  filter: drop-shadow(0 12px 18px rgba(0,0,0,0.12));
+  transition: filter 400ms ease;
+}
+
+#mascota .head {
+  width: 68%;
+  aspect-ratio: 1 / 1.18;
+  background: var(--mascota-skin);
+  border-radius: 50% 50% 44% 44% / 58% 58% 42% 42%;
+  position: relative;
+  z-index: 2;
+  box-shadow: inset 0 -6px 12px var(--mascota-skin-dark);
+  animation: respiracion 4s ease-in-out infinite;
+}
+
+#mascota .brillo {
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22%;
+  aspect-ratio: 1 / 1;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(212,160,23,0.35) 60%, transparent 100%);
+  border-radius: 50%;
+  filter: blur(1px);
+}
+
+#mascota .cuerpo {
+  width: 38%;
+  height: 16%;
+  background: var(--mascota-skin-dark);
+  border-radius: 50%;
+  margin-top: -6%;
+  z-index: 1;
+}
+
+#mascota .ojo {
+  position: absolute;
+  top: 34%;
+  width: 22%;
+  aspect-ratio: 1 / 1.4;
+  background: var(--mascota-eye);
+  border-radius: 50%;
+  overflow: hidden;
+  transform-origin: center;
+  animation: parpadeo 3.6s ease-in-out infinite;
+}
+
+#mascota .ojo.izq { left: 18%; }
+#mascota .ojo.der { right: 18%; animation-delay: 0.06s; }
+
+#mascota .pupila {
+  position: absolute;
+  inset: 18% 22%;
+  background: var(--mascota-pupil);
+  border-radius: 50%;
+  transform: translate(var(--mouse-x), var(--mouse-y));
+  transition: transform 80ms ease-out;
+}
+
+#mascota .ceja {
+  position: absolute;
+  top: 26%;
+  width: 26%;
+  height: 7%;
+  background: var(--mascota-eye);
+  border-radius: 999px;
+  transition: all 300ms ease;
+}
+
+#mascota .ceja.izq { left: 14%; transform: rotate(0deg); }
+#mascota .ceja.der { right: 14%; transform: rotate(0deg); }
+
+#mascota .mejilla {
+  position: absolute;
+  top: 50%;
+  width: 14%;
+  aspect-ratio: 1 / 1;
+  background: var(--mascota-blush);
+  border-radius: 50%;
+  opacity: 0.65;
+  transition: opacity 300ms ease, background 300ms ease;
+}
+
+#mascota .mejilla.izq { left: 8%; }
+#mascota .mejilla.der { right: 8%; }
+
+#subtitulos {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--color-muted, #64748b);
+  text-align: center;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* ===================== ANIMACIONES BASE ===================== */
+
+@keyframes parpadeo {
+  0%, 42%, 46%, 100% { transform: scaleY(1); }
+  44% { transform: scaleY(0.08); }
+}
+
+@keyframes respiracion {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.025); }
+}
+
+/* ===================== ESTADOS / MOODS ===================== */
+
+.mood-feliz .ojo {
+  height: 28%;
+  top: 32%;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+}
+.mood-feliz .pupila {
+  inset: 10% 18%;
+  width: 58%;
+  height: 58%;
+}
+.mood-feliz .ceja {
+  top: 22%;
+  height: 6%;
+}
+.mood-feliz .mejilla {
+  opacity: 1;
+  background: rgba(248, 164, 164, 0.85);
+}
+
+.mood-enojado .ceja.izq {
+  top: 20%;
+  left: 16%;
+  transform: rotate(18deg);
+}
+.mood-enojado .ceja.der {
+  top: 20%;
+  right: 16%;
+  transform: rotate(-18deg);
+}
+.mood-enojado .ojo {
+  height: 18%;
+  top: 34%;
+}
+.mood-enojado .pupila {
+  inset: 20% 24%;
+  width: 45%;
+  height: 45%;
+}
+.mood-enojado .mejilla {
+  opacity: 0.3;
+}
+
+.mood-duda .ceja.izq {
+  top: 18%;
+  left: 16%;
+  transform: rotate(-8deg);
+}
+.mood-duda .ceja.der {
+  top: 24%;
+  right: 16%;
+  transform: rotate(14deg);
+}
+.mood-duda .ojo.izq {
+  height: 10%;
+  top: 36%;
+  border-radius: 50%;
+}
+.mood-duda .ojo.der {
+  height: 22%;
+  top: 34%;
+}
+.mood-duda .pupila {
+  inset: 15% 25%;
+}
+
+.mood-dormido .ojo {
+  height: 4px !important;
+  top: 38% !important;
+  border-radius: 999px !important;
+  background: var(--mascota-eye) !important;
+  animation: none !important;
+}
+.mood-dormido .pupila {
+  display: none;
+}
+.mood-dormido .ceja {
+  top: 30%;
+  opacity: 0.35;
+}
+.mood-dormido .mejilla {
+  opacity: 0.2;
+}
+
+.mood-guino .ojo.der {
+  height: 4px !important;
+  top: 38% !important;
+  border-radius: 999px !important;
+  animation: none !important;
+  background: var(--mascota-eye) !important;
+}
+.mood-guino .ojo.der .pupila {
+  display: none;
+}
+.mood-guino .ceja.der {
+  top: 30%;
+  transform: rotate(-6deg);
+}
+.mood-guino .ojo.izq {
+  height: 24%;
+  top: 34%;
+}
+.mood-guino .pupila {
+  inset: 14% 22%;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  #mascota .head,
+  #mascota .ojo {
+    animation: none !important;
+  }
+  #mascota .pupila {
+    transition: none !important;
+  }
+}

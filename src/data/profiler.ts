@@ -28,8 +28,12 @@ export function profileDataset(rows: Row[]): DatasetProfile {
     const type = inferType(values);
     let min: unknown, max: unknown;
     if (type === "number") {
-      const nums = values.map((v) => Number(v)).filter((n) => !Number.isNaN(n));
-      if (nums.length) { min = Math.min(...nums); max = Math.max(...nums); }
+      let mn = Infinity, mx = -Infinity;
+      for (const v of values) {
+        const n = Number(v);
+        if (!Number.isNaN(n)) { if (n < mn) mn = n; if (n > mx) mx = n; }
+      }
+      if (mn !== Infinity) { min = mn; max = mx; }
     } else if (type === "date") {
       const dates = values.map((v) => String(v)).filter((s) => !Number.isNaN(Date.parse(s)));
       if (dates.length) {

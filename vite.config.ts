@@ -15,6 +15,8 @@ export default defineConfig({
           if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) return 'react'
           if (id.includes('node_modules/recharts')) return 'recharts'
           if (id.includes('node_modules/@copilotkit')) return 'copilot'
+          if (id.includes('node_modules/papaparse')) return 'papaparse'
+          if (id.includes('node_modules/@google/generative-ai')) return 'gemini'
         },
       },
     },
