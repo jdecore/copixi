@@ -1,4 +1,4 @@
-/* CERI — Slime inteligente estilo Rimuru, tema-agnóstico, puro CSS */
+/* CERI — Slime pixel-art, tema-agnóstico, puro CSS */
 
 #mascota {
   --mouse-x: 0px;
@@ -10,51 +10,56 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  filter: drop-shadow(0 18px 28px rgba(37, 99, 235, 0.22));
+  filter: drop-shadow(0 0 0 transparent);
   transition: filter 500ms ease;
 }
 
 #mascota .slime {
-  width: 82%;
+  width: 84%;
   aspect-ratio: 1 / 1.05;
   position: relative;
   z-index: 2;
   animation: flotar 5s ease-in-out infinite, respiracion 4s ease-in-out infinite;
+  image-rendering: pixelated;
 }
 
 #mascota .slime-body {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 35%, var(--slime-skin-light), var(--slime-skin) 55%, var(--slime-skin-dark) 100%);
-  border-radius: 50% 50% 42% 42% / 52% 52% 48% 48%;
-  box-shadow: inset 0 -10px 18px var(--slime-skin-dark), inset 0 8px 18px var(--slime-skin-light);
+  background: var(--slime-skin);
+  border-radius: 42% 42% 38% 38% / 48% 48% 42% 42%;
+  box-shadow:
+    inset -6px -8px 0 var(--slime-skin-dark),
+    inset 6px 8px 0 var(--slime-skin-light),
+    0 0 0 4px var(--slime-skin-dark);
   overflow: hidden;
 }
 
 #mascota .slime-glow {
   position: absolute;
-  top: 10%;
+  top: 12%;
   left: 50%;
   transform: translateX(-50%);
-  width: 55%;
+  width: 50%;
   aspect-ratio: 1 / 1;
-  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.75), rgba(255,255,255,0.15) 55%, transparent 72%);
+  background: var(--slime-skin-light);
   border-radius: 50%;
-  filter: blur(6px);
-  animation: brillo 3.5s ease-in-out infinite;
+  opacity: 0.9;
+  box-shadow: 0 0 0 3px var(--slime-skin-dark);
+  animation: brillo 3.5s steps(3, end) infinite;
 }
 
 #mascota .eye {
   position: absolute;
   top: 30%;
   width: 26%;
-  aspect-ratio: 1 / 1.35;
+  aspect-ratio: 1 / 1.3;
   background: var(--slime-eye);
   border-radius: 50%;
   overflow: hidden;
   transform-origin: center;
-  animation: parpadeo 3.8s ease-in-out infinite;
-  box-shadow: inset 0 2px 4px rgba(255,255,255,0.25);
+  animation: parpadeo 3.8s steps(2, end) infinite;
+  box-shadow: inset 0 0 0 3px var(--slime-eye);
 }
 
 #mascota .eye.left { left: 16%; }
@@ -62,12 +67,12 @@
 
 #mascota .pupil {
   position: absolute;
-  inset: 20% 24%;
-  background: radial-gradient(circle at 35% 35%, #fff 0%, #e2e8f0 55%, #94a3b8 100%);
+  inset: 18% 22%;
+  background: var(--slime-pupil);
   border-radius: 50%;
   transform: translate(var(--mouse-x), var(--mouse-y));
-  transition: transform 90ms ease-out;
-  box-shadow: 0 0 8px rgba(255,255,255,0.7), 0 0 14px var(--slime-glow);
+  transition: transform 90ms steps(2, end);
+  box-shadow: 0 0 0 2px var(--slime-skin-dark);
 }
 
 #mascota .mouth {
@@ -79,7 +84,7 @@
   aspect-ratio: 1 / 0.55;
   background: var(--slime-mouth);
   border-radius: 0 0 50% 50% / 0 0 70% 70%;
-  transition: all 300ms ease;
+  transition: all 300ms steps(2, end);
 }
 
 #mascota .cheek {
@@ -89,23 +94,23 @@
   aspect-ratio: 1 / 1;
   background: var(--slime-blush);
   border-radius: 50%;
-  opacity: 0.55;
-  transition: opacity 300ms ease, transform 300ms ease;
-  filter: blur(1px);
+  opacity: 0.7;
+  transition: opacity 300ms steps(2, end), transform 300ms steps(2, end);
+  box-shadow: 0 0 0 2px var(--slime-skin-dark);
 }
 
 #mascota .cheek.left { left: 6%; }
 #mascota .cheek.right { right: 6%; }
 
 #mascota .slime-base {
-  width: 64%;
-  height: 14%;
-  background: linear-gradient(180deg, var(--slime-skin) 0%, var(--slime-skin-dark) 100%);
+  width: 66%;
+  height: 16%;
+  background: var(--slime-skin-dark);
   border-radius: 50%;
   margin-top: -10%;
   z-index: 1;
-  opacity: 0.9;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+  opacity: 0.95;
+  box-shadow: 0 0 0 3px var(--slime-eye);
 }
 
 #subtitulos {
@@ -113,16 +118,17 @@
   font-size: 13px;
   color: var(--color-muted, #64748b);
   text-align: center;
-  font-weight: 500;
-  letter-spacing: 0.03em;
-  transition: color 300ms ease;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition: color 300ms steps(2, end);
+  text-shadow: 2px 2px 0 var(--color-surface);
 }
 
-/* ===================== ANIMACIONES BASE ===================== */
+/* ===================== ANIMACIONES BASE PIXEL ===================== */
 
 @keyframes parpadeo {
   0%, 42%, 46%, 100% { transform: scaleY(1); }
-  44% { transform: scaleY(0.06); }
+  44% { transform: scaleY(0.08); }
 }
 
 @keyframes respiracion {
@@ -136,18 +142,20 @@
 }
 
 @keyframes brillo {
-  0%, 100% { opacity: 0.7; transform: translateX(-50%) scale(1); }
-  50% { opacity: 1; transform: translateX(-50%) scale(1.08); }
+  0%, 100% { opacity: 0.8; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
 }
 
-/* ===================== ESTADOS / MOODS ===================== */
+/* ===================== ESTADOS / MOODS PIXEL ===================== */
 
 .mood-feliz .eye {
   width: 30%;
   top: 28%;
+  border-radius: 50%;
 }
 .mood-feliz .pupil {
   inset: 14% 18%;
+  box-shadow: 0 0 0 3px var(--slime-skin-dark);
 }
 .mood-feliz .mouth {
   width: 26%;
@@ -157,46 +165,57 @@
 .mood-feliz .cheek {
   opacity: 1;
   transform: scale(1.15);
+  box-shadow: 0 0 0 3px var(--slime-skin-dark);
 }
 
 .mood-enojado .eye {
   width: 24%;
   top: 32%;
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px var(--slime-eye);
 }
 .mood-enojado .pupil {
   inset: 24% 28%;
+  box-shadow: 0 0 0 3px var(--slime-skin-dark);
 }
 .mood-enojado .mouth {
   width: 22%;
   height: 10%;
-  border-radius: 50% 50% 0 0 / 70% 70% 0 0;
+  border-radius: 50%;
   bottom: 24%;
+  box-shadow: 0 0 0 2px var(--slime-mouth);
 }
 .mood-enojado .cheek {
-  opacity: 0.25;
+  opacity: 0.3;
+  box-shadow: 0 0 0 2px var(--slime-skin-dark);
 }
 
 .mood-duda .eye.left {
   width: 18%;
   top: 34%;
   border-radius: 50%;
+  box-shadow: inset 0 0 0 2px var(--slime-eye);
 }
 .mood-duda .eye.right {
   width: 28%;
   top: 30%;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px var(--slime-eye);
 }
 .mood-duda .pupil {
   inset: 18% 22%;
+  box-shadow: 0 0 0 2px var(--slime-skin-dark);
 }
 .mood-duda .mouth {
   width: 14%;
   height: 18%;
   border-radius: 50%;
   bottom: 26%;
+  box-shadow: 0 0 0 2px var(--slime-mouth);
 }
 .mood-duda .cheek.left {
-  opacity: 0.4;
+  opacity: 0.5;
+  box-shadow: 0 0 0 2px var(--slime-skin-dark);
 }
 
 .mood-dormido .eye {
@@ -204,6 +223,7 @@
   top: 40% !important;
   border-radius: 999px !important;
   background: var(--slime-eye) !important;
+  box-shadow: 0 0 0 2px var(--slime-eye) !important;
   animation: none !important;
 }
 .mood-dormido .pupil {
@@ -214,9 +234,11 @@
   height: 8%;
   border-radius: 50%;
   bottom: 28%;
+  box-shadow: 0 0 0 2px var(--slime-mouth);
 }
 .mood-dormido .cheek {
   opacity: 0.15;
+  box-shadow: none;
 }
 
 .mood-guino .eye.right {
@@ -225,6 +247,7 @@
   border-radius: 999px !important;
   animation: none !important;
   background: var(--slime-eye) !important;
+  box-shadow: 0 0 0 2px var(--slime-eye) !important;
 }
 .mood-guino .eye.right .pupil {
   display: none;
@@ -232,15 +255,19 @@
 .mood-guino .eye.left {
   width: 30%;
   top: 28%;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px var(--slime-eye);
 }
 .mood-guino .pupil {
   inset: 12% 16%;
+  box-shadow: 0 0 0 3px var(--slime-skin-dark);
 }
 .mood-guino .mouth {
   width: 20%;
   height: 12%;
   border-radius: 0 0 50% 50% / 0 0 70% 70%;
   transform: translateX(-50%) rotate(-8deg);
+  box-shadow: 0 0 0 2px var(--slime-mouth);
 }
 
 /* Reduced motion */

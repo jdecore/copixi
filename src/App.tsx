@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, PieChart, Pie, Cell } from 'recharts'
 import { toBarData } from './data/chartAdapter'
-import * as Dialog from '@radix-ui/react-dialog'
 import * as Tabs from '@radix-ui/react-tabs'
 import './App.css'
 import { parseCSV, validateFile } from './data/parser'
@@ -222,47 +221,33 @@ function DashboardContent() {
           <div className="landing-grid">
             <div className="landing-left">
               <h1 id="headline">Your AI Data Analyst</h1>
-              <p className="sub">Turn raw business data into clear decisions.</p>
+              <p className="sub">Sube un CSV, explora filtros, gráficos y anomalías, y pregunta a la IA para modificar el dashboard con acciones validadas.</p>
               <div className="cta-row">
                 <button className="btn btn-primary" onClick={() => inputRef.current?.click()} type="button">
                   <i className="pixelart-icons-font-upload" aria-hidden /> Analyze your data
                 </button>
-                <button className="btn btn-secondary" onClick={handleDemo} type="button" disabled={loading}>
-                  <i className="pixelart-icons-font-play" aria-hidden /> {loading ? 'Loading…' : 'Try demo data'}
-                </button>
-                <Dialog.Root>
-                  <Dialog.Trigger asChild>
-                    <button className="btn btn-secondary" type="button"><i className="pixelart-icons-font-info" aria-hidden /> How it works</button>
-                  </Dialog.Trigger>
-                  <Dialog.Portal>
-                    <Dialog.Overlay style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)' }} />
-                    <Dialog.Content aria-describedby={undefined} style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', background: 'white', borderRadius: 12, padding: 24, maxWidth: 480, width: '90vw', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)' }}>
-                      <Dialog.Title style={{ margin: 0, fontWeight: 700 }}>How Copixi works</Dialog.Title>
-                      <Dialog.Description style={{ color: 'var(--color-muted)', fontSize: 14, marginTop: 8 }}>
-                        Your data stays in your browser whenever possible (Papa Parse + local engine). The AI only receives aggregated context, never full rows.
-                      </Dialog.Description>
-                      <p style={{ fontSize: 13, marginTop: 12 }}>Flow: Landing → Upload/Demo → Profiling → KPIs + Charts → Filters → AI Analyst (validated actions).</p>
-                      <Dialog.Close asChild><button className="btn btn-primary" style={{ marginTop: 16 }} type="button">Got it</button></Dialog.Close>
-                    </Dialog.Content>
-                  </Dialog.Portal>
-                </Dialog.Root>
               </div>
 
               <div
-                className={`upload ${dragging ? 'dragging' : ''}`}
+                className={`pixel-drop ${dragging ? 'dragging' : ''}`}
                 onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={onDrop}
                 role="region"
                 aria-label="Upload CSV or TSV"
               >
-                <h3><i className="pixelart-icons-font-file" aria-hidden /> Drag & drop your CSV or TSV here</h3>
-                <p>or click to browse — max 15 MB, .csv / .tsv</p>
-                <input ref={inputRef} type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f) }} />
-                <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={() => inputRef.current?.click()} type="button">Choose file</button>
-                {fileInfo && <div className="file-meta"><span>{fileInfo.name}</span><span>{formatBytes(fileInfo.size)}</span><span>{fileInfo.rows} rows</span><span>{fileInfo.columns} cols</span></div>}
-                {loading && <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center' }}><span className="skeleton" style={{ width: 120 }} /> <span className="skeleton" style={{ width: 80 }} /></div>}
-                {error && <div role="alert" style={{ marginTop: 12, color: 'var(--color-danger)', fontSize: 13, background: '#fef2f2', border: '1px solid #fecaca', padding: '8px 12px', borderRadius: 8, display: 'inline-block' }}>{error} — try another file or <button onClick={handleDemo} style={{ textDecoration: 'underline', background: 'none', border: 0, cursor: 'pointer', color: 'inherit', fontWeight: 600 }}>use demo data</button></div>}
+                <div className="pixel-drop-inner">
+                  <div className="pixel-drop-icon" aria-hidden>
+                    <i className="pixelart-icons-font-file" />
+                  </div>
+                  <div className="pixel-drop-title">DRAG & DROP</div>
+                  <div className="pixel-drop-sub">.CSV / .TSV — max 15 MB</div>
+                  <input ref={inputRef} type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f) }} />
+                  <button className="btn btn-secondary small" style={{ marginTop: 10 }} onClick={() => inputRef.current?.click()} type="button">Choose file</button>
+                  {fileInfo && <div className="file-meta"><span>{fileInfo.name}</span><span>{formatBytes(fileInfo.size)}</span><span>{fileInfo.rows} rows</span><span>{fileInfo.columns} cols</span></div>}
+                  {loading && <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center' }}><span className="skeleton" style={{ width: 120 }} /> <span className="skeleton" style={{ width: 80 }} /></div>}
+                  {error && <div role="alert" style={{ marginTop: 12, color: 'var(--color-danger)', fontSize: 13, background: '#fef2f2', border: '1px solid #fecaca', padding: '8px 12px', borderRadius: 8, display: 'inline-block' }}>{error}</div>}
+                </div>
               </div>
             </div>
 
@@ -271,7 +256,7 @@ function DashboardContent() {
                 loading ? 'Procesando datos…' :
                 error ? 'Ups, algo falló' :
                 hasData ? 'Dataset cargado. Pregúntame.' :
-                'Soy CERI, tu analista IA. Sube un CSV o prueba el demo.'
+                'Soy CERI, tu analista IA.'
               } />
             </div>
           </div>
