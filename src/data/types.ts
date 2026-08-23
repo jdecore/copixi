@@ -36,7 +36,7 @@ export type Metrics = {
 };
 
 export type ChartConfig = {
-  chartType: "line" | "bar" | "area" | "pie";
+  chartType: "line" | "bar" | "area" | "pie" | "scatter";
   x: string;
   y: string;
   title?: string;

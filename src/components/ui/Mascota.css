@@ -270,6 +270,19 @@
   box-shadow: 0 0 0 2px var(--slime-mouth);
 }
 
+.mood-hablando .mouth {
+  width: 22%;
+  height: 14%;
+  border-radius: 50%;
+  bottom: 24%;
+  animation: hablar 0.6s steps(2, end) infinite;
+}
+
+@keyframes hablar {
+  0%, 100% { transform: translateX(-50%) scaleY(1); }
+  50% { transform: translateX(-50%) scaleY(0.5); }
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   #mascota .slime,

@@ -53,12 +53,12 @@ export function percentile(rows: Row[], column: string, p: number): number {
   return nums[Math.max(0, Math.min(idx, nums.length - 1))];
 }
 
-export function computeMetrics(rows: Row[]): Metrics {
+export function computeMetrics(rows: Row[], salesCol = "sales", unitsCol = "units", customersCol = "customers"): Metrics {
   return {
-    totalSales: sum(rows, "sales"),
-    avgSales: avg(rows, "sales"),
-    totalUnits: sum(rows, "units"),
-    totalCustomers: sum(rows, "customers"),
+    totalSales: sum(rows, salesCol),
+    avgSales: avg(rows, salesCol),
+    totalUnits: sum(rows, unitsCol),
+    totalCustomers: sum(rows, customersCol),
     rowCount: rows.length,
   };
 }

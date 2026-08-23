@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, PieChart, Pie, Cell } from 'recharts'
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis } from 'recharts'
 import { toBarData } from './data/chartAdapter'
 import * as Tabs from '@radix-ui/react-tabs'
 import './App.css'
@@ -35,24 +35,39 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function ChartRenderer({ config, data, height = 260 }: { config: { chartType: string; x: string; y: string; title?: string }; data: { name: string; value: number }[]; height?: number }) {
+function ChartRenderer({ config, data, height = 260 }: { config: { chartType: string; x: string; y: string; title?: string }; data: { name: string; value: number }[] | { x: number; y: number }[]; height?: number }) {
   const colors = ['#0f62fe', '#0e9f6e', '#c27803', '#e02424', '#64748b', '#8a2be2', '#00b4d8', '#ff6b6b']
   if (config.chartType === 'pie') {
     return (
       <ResponsiveContainer width="100%" height={height}>
         <PieChart>
-          <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
-            {data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
+          <Pie data={data as { name: string; value: number }[]} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
+            {(data as { name: string; value: number }[]).map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
           </Pie>
           <Tooltip />
         </PieChart>
       </ResponsiveContainer>
     )
   }
+  if (config.chartType === 'scatter') {
+    const scatterData = (data as { x: number; y: number }[])
+    return (
+      <ResponsiveContainer width="100%" height={height}>
+        <ScatterChart>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+          <XAxis dataKey="x" type="number" name={config.x} tick={{ fontSize: 11 }} />
+          <YAxis dataKey="y" type="number" name={config.y} tick={{ fontSize: 11 }} />
+          <ZAxis range={[40, 400]} />
+          <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+          <Scatter data={scatterData} fill={colors[0]} shape="circle" />
+        </ScatterChart>
+      </ResponsiveContainer>
+    )
+  }
   if (config.chartType === 'area') {
     return (
       <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={data}>
+        <AreaChart data={data as { name: string; value: number }[]}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
           <YAxis tick={{ fontSize: 11 }} />
@@ -65,7 +80,7 @@ function ChartRenderer({ config, data, height = 260 }: { config: { chartType: st
   if (config.chartType === 'line') {
     return (
       <ResponsiveContainer width="100%" height={height}>
-        <LineChart data={data}>
+        <LineChart data={data as { name: string; value: number }[]}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
           <YAxis tick={{ fontSize: 11 }} />
@@ -77,7 +92,7 @@ function ChartRenderer({ config, data, height = 260 }: { config: { chartType: st
   }
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data}>
+      <BarChart data={data as { name: string; value: number }[]}>
         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
         <XAxis dataKey="name" tick={{ fontSize: 11 }} />
         <YAxis tick={{ fontSize: 11 }} />
@@ -89,7 +104,7 @@ function ChartRenderer({ config, data, height = 260 }: { config: { chartType: st
 }
 
 function DashboardContent() {
-  const { rawRows, fileInfo, filteredRows, timeSeries, byCity, byProduct, activeChart, setActiveChart, error, loading, setDataset, setError, setLoading, clearFilters, addFilter, autoCharts } = useDashboard()
+  const { rawRows, fileInfo, filteredRows, timeSeries, byCity, byProduct, activeChart, setActiveChart, error, loading, setDataset, setError, setLoading, clearFilters, addFilter, autoCharts, dateCol, primaryCat, catCols, metrics, filters } = useDashboard()
   const [dragging, setDragging] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const [mascotaMood, setMascotaMood] = useState<MascotaMood>('neutro')
@@ -269,125 +284,155 @@ function DashboardContent() {
         )}
 
         {hasData && (
-          <Tabs.Root value={activeTab} onValueChange={setActiveTab} className="dash-tabs">
-            <Tabs.List className="tabs-list" aria-label="Dashboard sections">
-              <Tabs.Trigger value="overview" className="tabs-trigger"><i className="pixelart-icons-font-dashboard" aria-hidden /> Overview</Tabs.Trigger>
-              <Tabs.Trigger value="data" className="tabs-trigger"><i className="pixelart-icons-font-table" aria-hidden /> Data</Tabs.Trigger>
-              <Tabs.Trigger value="insights" className="tabs-trigger"><i className="pixelart-icons-font-lightbulb" aria-hidden /> Insights</Tabs.Trigger>
-              <Tabs.Trigger value="ai" className="tabs-trigger"><i className="pixelart-icons-font-message" aria-hidden /> AI Analyst</Tabs.Trigger>
-            </Tabs.List>
+          <div className="dashboard-grid">
+            <Tabs.Root value={activeTab} onValueChange={setActiveTab} className="dash-tabs">
+              <Tabs.List className="tabs-list" aria-label="Dashboard sections">
+                <Tabs.Trigger value="overview" className="tabs-trigger"><i className="pixelart-icons-font-dashboard" aria-hidden /> Overview</Tabs.Trigger>
+                <Tabs.Trigger value="data" className="tabs-trigger"><i className="pixelart-icons-font-table" aria-hidden /> Data</Tabs.Trigger>
+                <Tabs.Trigger value="insights" className="tabs-trigger"><i className="pixelart-icons-font-lightbulb" aria-hidden /> Insights</Tabs.Trigger>
+                <Tabs.Trigger value="ai" className="tabs-trigger"><i className="pixelart-icons-font-message" aria-hidden /> AI Analyst</Tabs.Trigger>
+              </Tabs.List>
 
-            <Tabs.Content value="overview" className="tabs-content">
-              <FilterBar />
-              <ShareBar />
-              <ExportBar />
-              <TrustBar />
-              <KPIGrid />
+              <Tabs.Content value="overview" className="tabs-content">
+                <FilterBar />
+                <ShareBar />
+                <ExportBar />
+                <TrustBar />
+                <KPIGrid />
 
-              {/* Primary charts */}
-              {autoCharts.length === 0 ? (
-                <div className="empty">No chartable columns detected. Ensure your CSV has at least one numeric or categorical column.</div>
-              ) : (
-                <div className="charts">
-                  {autoCharts.slice(0, 2).map((c) => (
-                    <ChartCard key={`${c.config.chartType}|${c.config.x}|${c.config.y}`} title={c.config.title ?? `${c.config.y} by ${c.config.x}`} icon="pixelart-icons-font-chart" empty={c.data.length ? null : 'No data for this chart.'}>
-                      <ChartRenderer config={c.config} data={c.data} />
-                    </ChartCard>
-                  ))}
-                </div>
-              )}
-
-              {autoCharts.length > 2 && (
-                <div className="charts" style={{ marginTop: 16 }}>
-                  {autoCharts.slice(2, 6).map((c) => (
-                    <ChartCard key={`${c.config.chartType}|${c.config.x}|${c.config.y}`} title={c.config.title ?? `${c.config.y} by ${c.config.x}`} icon="pixelart-icons-font-chart" empty={c.data.length ? null : 'No data for this chart.'}>
-                      <ChartRenderer config={c.config} data={c.data} />
-                    </ChartCard>
-                  ))}
-                </div>
-              )}
-
-              {activeChart && (
-                <div className="card" style={{ marginTop: 16, borderColor: 'var(--color-primary)', borderWidth: 1.5 }}>
-                  <h3><i className="pixelart-icons-font-chart" aria-hidden /> AI Chart — {activeChart.chartType} ({activeChart.x} → {activeChart.y})</h3>
-                  <ChartRenderer config={activeChart} data={toBarData(filteredRows, activeChart.x, activeChart.y).slice(0, 8)} />
-                  <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-                    <span className="filter-count">Set via AI action setChart</span>
-                    <button className="btn btn-secondary small" onClick={() => setActiveChart(null)} type="button">Dismiss</button>
+                {/* Primary charts */}
+                {autoCharts.length === 0 ? (
+                  <div className="empty">No chartable columns detected. Ensure your CSV has at least one numeric or categorical column.</div>
+                ) : (
+                  <div className="charts">
+                    {autoCharts.slice(0, 2).map((c) => (
+                      <ChartCard key={`${c.config.chartType}|${c.config.x}|${c.config.y}`} title={c.config.title ?? `${c.config.y} by ${c.config.x}`} icon="pixelart-icons-font-chart" empty={c.data.length ? null : 'No data for this chart.'}>
+                        <ChartRenderer config={c.config} data={c.data as any} />
+                      </ChartCard>
+                    ))}
                   </div>
+                )}
+
+                {autoCharts.length > 2 && (
+                  <div className="charts" style={{ marginTop: 16 }}>
+                    {autoCharts.slice(2, 6).map((c) => (
+                      <ChartCard key={`${c.config.chartType}|${c.config.x}|${c.config.y}`} title={c.config.title ?? `${c.config.y} by ${c.config.x}`} icon="pixelart-icons-font-chart" empty={c.data.length ? null : 'No data for this chart.'}>
+                        <ChartRenderer config={c.config} data={c.data as any} />
+                      </ChartCard>
+                    ))}
+                  </div>
+                )}
+
+                {activeChart && (
+                  <div className="card" style={{ marginTop: 16, borderColor: 'var(--color-primary)', borderWidth: 1.5 }}>
+                    <h3><i className="pixelart-icons-font-chart" aria-hidden /> AI Chart — {activeChart.chartType} ({activeChart.x} → {activeChart.y})</h3>
+                    {activeChart.chartType === 'scatter' ? (
+                      <ChartRenderer config={activeChart} data={([] as any)} />
+                    ) : (
+                      <ChartRenderer config={activeChart} data={toBarData(filteredRows, activeChart.x, activeChart.y).slice(0, 8)} />
+                    )}
+                    <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                      <span className="filter-count">Set via AI action setChart</span>
+                      <button className="btn btn-secondary small" onClick={() => setActiveChart(null)} type="button">Dismiss</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Advanced anomalies Fase 5 */}
+                <div style={{ marginTop: 16 }}>
+                  <AnomalyPanel />
                 </div>
-              )}
+              </Tabs.Content>
 
-              {/* Advanced anomalies Fase 5 */}
-              <div style={{ marginTop: 16 }}>
-                <AnomalyPanel />
-              </div>
-            </Tabs.Content>
+              <Tabs.Content value="data" className="tabs-content">
+                <FilterBar />
+                <ShareBar />
+                <ExportBar />
+                <DataTable />
+                <DataProfiler />
+                <HistoryList />
+                <DatasetSwitcher />
+              </Tabs.Content>
 
-            <Tabs.Content value="data" className="tabs-content">
-              <FilterBar />
-              <ShareBar />
-              <ExportBar />
-              <DataTable />
-              <DataProfiler />
-              <HistoryList />
-              <DatasetSwitcher />
-            </Tabs.Content>
+              <Tabs.Content value="insights" className="tabs-content">
+                <FilterBar />
+                <div className="card" style={{ marginBottom: 16 }}>
+                  <h3><i className="pixelart-icons-font-lightbulb" aria-hidden /> Key insights (deterministic)</h3>
+                  <p style={{ color: 'var(--color-muted)', fontSize: 13, margin: '6px 0 12px' }}>
+                    Insights are computed locally from filtered data — no LLM. Trends, rankings and anomalies.
+                  </p>
+                  <InsightCard />
+                </div>
 
-            <Tabs.Content value="insights" className="tabs-content">
-              <FilterBar />
-              <div className="card" style={{ marginBottom: 16 }}>
-                <h3><i className="pixelart-icons-font-lightbulb" aria-hidden /> Key insights (deterministic)</h3>
-                <p style={{ color: 'var(--color-muted)', fontSize: 13, margin: '6px 0 12px' }}>
-                  Insights are computed locally from filtered data — no LLM. Trends, rankings and anomalies.
-                </p>
-                <InsightCard />
-              </div>
-
-              <div className="charts">
-                <ChartCard title="Trend — monthly sales" icon="pixelart-icons-font-chart" empty={timeSeries.length ? null : 'No trend data.'}>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <LineChart data={timeSeries}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="value" stroke="#0f172a" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartCard>
-                <div className="card">
-                  <h3><i className="pixelart-icons-font-ranking" aria-hidden /> Rankings</h3>
+                <div className="charts">
+                  <ChartCard title={`Trend — ${dateCol ?? 'time'}`} icon="pixelart-icons-font-chart" empty={timeSeries.length ? null : 'No trend data.'}>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <LineChart data={timeSeries}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                        <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="value" stroke="#0f172a" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartCard>
+                  <div className="card">
+                    <h3><i className="pixelart-icons-font-ranking" aria-hidden /> Rankings</h3>
                   <div style={{ display: 'grid', gap: 12 }}>
                     <div>
-                      <div className="kpi-label">By city</div>
+                      <div className="kpi-label">By {primaryCat ?? 'category'}</div>
                       <ul style={{ margin: '6px 0 0', paddingLeft: 18, fontSize: 13 }}>{byCity.slice(0, 3).map((b) => <li key={b.name}>{b.name}: ${b.value.toLocaleString()}</li>)}</ul>
                     </div>
-                    <div>
-                      <div className="kpi-label">By product</div>
-                      <ul style={{ margin: '6px 0 0', paddingLeft: 18, fontSize: 13 }}>{byProduct.slice(0, 3).map((b) => <li key={b.name}>{b.name}: ${b.value.toLocaleString()}</li>)}</ul>
-                    </div>
+                    {catCols.length >= 3 && (
+                      <div>
+                        <div className="kpi-label">By {catCols[2] ?? 'product'}</div>
+                        <ul style={{ margin: '6px 0 0', paddingLeft: 18, fontSize: 13 }}>{byProduct.slice(0, 3).map((b) => <li key={b.name}>{b.name}: ${b.value.toLocaleString()}</li>)}</ul>
+                      </div>
+                    )}
+                  </div>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ marginTop: 16 }}>
-                <CompareTable />
-              </div>
-              <div style={{ marginTop: 16 }}>
-                <ShareBar />
-              </div>
-              <div style={{ marginTop: 16 }}>
-                <ExportBar />
-              </div>
-            </Tabs.Content>
+                <div style={{ marginTop: 16 }}>
+                  <CompareTable />
+                </div>
+                <div style={{ marginTop: 16 }}>
+                  <ShareBar />
+                </div>
+                <div style={{ marginTop: 16 }}>
+                  <ExportBar />
+                </div>
+              </Tabs.Content>
 
-            <Tabs.Content value="ai" className="tabs-content">
-              <Suspense fallback={<div style={{ display: 'flex', gap: 8, padding: 16 }}><span className="skeleton" style={{ width: '100%', height: 320 }} /></div>}>
-                <CopilotPanel />
-              </Suspense>
-            </Tabs.Content>
-          </Tabs.Root>
+              <Tabs.Content value="ai" className="tabs-content">
+                <Suspense fallback={<div style={{ display: 'flex', gap: 8, padding: 16 }}><span className="skeleton" style={{ width: '100%', height: 320 }} /></div>}>
+                  <CopilotPanel />
+                </Suspense>
+              </Tabs.Content>
+            </Tabs.Root>
+
+            {/* Sticky mascot panel */}
+            <aside className="mascota-sticky" aria-label="AI assistant">
+              <Mascota mood={mascotaMood} subtitulo={
+                loading ? 'Procesando datos…' :
+                error ? 'Ups, algo falló' :
+                hasData ? `${fileInfo?.rows ?? 0} filas, ${fileInfo?.columns ?? 0} columnas` :
+                'Soy CERI, tu analista IA.'
+              } />
+              <div className="copilot-mini card" style={{ padding: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <i className="pixelart-icons-font-message" aria-hidden /> Mini resumen
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-muted)', lineHeight: 1.5 }}>
+                  {metrics ? `${metrics.rowCount} filas · ${metrics.totalSales.toLocaleString()} total` : 'Sin datos'}
+                  {filters.length > 0 && <span style={{ marginLeft: 8 }}>· {filters.length} filtros</span>}
+                </div>
+                <button className="btn btn-secondary small" style={{ marginTop: 10, width: '100%' }} type="button" onClick={() => { setActiveTab('ai'); document.querySelector('.mascota-sticky')?.classList.add('expanded') }}>
+                  <i className="pixelart-icons-font-message" aria-hidden /> Abrir chat completo
+                </button>
+              </div>
+            </aside>
+          </div>
         )}
       </main>
 

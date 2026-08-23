@@ -22,7 +22,17 @@ export function toPieData(rows: Row[], categoryCol: string, valueCol = "sales"):
   return toBarData(rows, categoryCol, valueCol);
 }
 
-export type SuggestedChart = { config: ChartConfig; data: { name: string; value: number }[] };
+export function toScatterData(rows: Row[], xCol: string, yCol: string): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = []
+  for (const r of rows) {
+    const x = Number(r[xCol])
+    const y = Number(r[yCol])
+    if (!Number.isNaN(x) && !Number.isNaN(y)) out.push({ x, y })
+  }
+  return out
+}
+
+export type SuggestedChart = { config: ChartConfig; data: { name: string; value: number }[] | { x: number; y: number }[] };
 
 function looksLikeDate(values: unknown[]): boolean {
   const samples = values.filter((v) => v !== null && v !== "" && v !== undefined).slice(0, 20);
@@ -49,11 +59,11 @@ export function suggestCharts(columns: ColumnMeta[], rows: Row[]): SuggestedChar
     return `${config.chartType}|${config.x}|${config.y}`;
   }
 
-  function add(config: ChartConfig, data: { name: string; value: number }[]) {
+  function add(config: ChartConfig, data: { name: string; value: number }[] | { x: number; y: number }[]) {
     const k = key(config);
     if (!seen.has(k) && data.length > 0) {
       seen.add(k);
-      charts.push({ config, data: data.slice(0, 20) });
+      charts.push({ config, data: (data as { name: string; value: number }[]).slice(0, 20) as { name: string; value: number }[] });
     }
   }
 
@@ -76,6 +86,15 @@ export function suggestCharts(columns: ColumnMeta[], rows: Row[]): SuggestedChar
     }
   }
 
+  if (numCols.length >= 2) {
+    const x = numCols[0].name
+    const y = numCols[1].name
+    const data = toScatterData(rows, x, y)
+    if (data.length) {
+      add({ chartType: "scatter", x, y, title: `${y} vs ${x}` }, data as any)
+    }
+  }
+
   if (catCols.length > 0 && numCols.length > 0) {
     const c = catCols[0];
     const n = numCols[0];
@@ -85,5 +104,5 @@ export function suggestCharts(columns: ColumnMeta[], rows: Row[]): SuggestedChar
     }
   }
 
-  return charts.slice(0, 6);
+  return charts.slice(0, 8);
 }

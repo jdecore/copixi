@@ -1134,9 +1134,10 @@ FEATURES: Landing 2 CTAs + demo <30s, Upload drag&drop, 4 charts con propósito,
 - **Fase 8:** Completada (2026-08-22) — Share & Trust: URL compartible ?f=&c= (solo filters/chart, sin filas §8) + Copy link + TrustBar stack badges, sin backend ni nuevas deps, build ok
 - **Fase 9:** Completada (2026-08-22) — Command Palette (⌘K) + Analytics local privada + sitemap.xml, sin backend ni nuevas deps, build ok
 - **Fase 10:** Completada (2026-08-22) — Final Audit 100% Handoff: Quality Gate §38 re-auditado con evidencia (tsc 0, build 4.26s, 0 violaciones, demo 180 filas, 61 pixelarticons, pnpm, 2 Functions mínimas), proyecto cerrado portfolio-grade
+- **Fase 11 — Mascota Sticky + RAG + TTS:** Completada (2026-08-22) — Plan `.kilo/plans/1787439634339-mascota-sticky-rag-copilotkit.md`: mascota sticky en dashboard (desktop right panel + mobile fixed), TTS nativo con `speechSynthesis`, panel derecho unificado con mini resumen + botón expandir chat, ChartAdapter genérico (detección dinámica de columnas date/numeric/categorical, scatter sugerido), RAG local con `@xenova/transformers` (MiniLM embeddings, búsqueda semántica top-K, cache memoria, 500 filas max, lazy import), acción `ragQuery` en CopilotPanel + contexto enriquecido en `useCopilotReadable`, DashboardContext extended con `embeddingStatus`/`topSimilarRows`/`ragQuery`, privacidad §8 respetada (embeddings en browser, solo snippets al LLM), build ok con transformers code-split (~189KB gzip)
 
 Histórico: antes de 2026-08-21 el entregable era únicamente `AGENTS.md`. Desde Fase 1 el proyecto es código ejecutable frontend-first; `AGENTS.md` permanece como contrato vivo. Fase 10 certifica 100% — sin fases pendientes.
 
 ---
 
-*Última actualización: 2026-08-22 (Fase 10 Final Audit 100% — todas las fases 0–10 completadas y verificadas) — Contrato vivo de Copixi. Cualquier desviación debe justificarse según §41.*
+*Última actualización: 2026-08-22 (Fase 11 Mascota Sticky + RAG + TTS — plan implementado y verificado) — Contrato vivo de Copixi. Cualquier desviación debe justificarse según §41.*

@@ -5,6 +5,43 @@ import { computeMetrics } from '../data/statistics'
 import { applyFilters } from '../data/transformations'
 import { detectAnomaliesZScore } from '../data/anomalyDetection'
 import { toTimeSeries, toBarData, suggestCharts } from '../data/chartAdapter'
+import { ragSearch, type RagHit } from '../lib/rag'
+
+function looksLikeDate(values: unknown[]): boolean {
+  const samples = values.filter((v) => v !== null && v !== "" && v !== undefined).slice(0, 20)
+  if (samples.length === 0) return false
+  let dateCount = 0
+  for (const v of samples) {
+    const s = String(v).trim()
+    if (!Number.isNaN(Date.parse(s)) && /\d{4}-\d{2}-\d{2}/.test(s)) dateCount++
+  }
+  return dateCount / samples.length > 0.7
+}
+
+function detectDateColumn(columns: ColumnMeta[], rows: Row[]): string | null {
+  const dateCol = columns.find((c) => c.type === 'date')
+  if (dateCol) return dateCol.name
+  for (const c of columns) {
+    if (looksLikeDate(rows.map((r) => r[c.name]))) return c.name
+  }
+  return null
+}
+
+function detectNumericColumns(columns: ColumnMeta[]): string[] {
+  return columns.filter((c) => c.type === 'number').map((c) => c.name)
+}
+
+function detectCategoricalColumns(columns: ColumnMeta[]): string[] {
+  return columns.filter((c) => c.type === 'string' && c.distinctCount >= 2 && c.distinctCount <= 20).map((c) => c.name)
+}
+
+function pickColumn(names: string[], candidates: string[]): string | null {
+  for (const c of candidates) {
+    const found = names.find((n) => n.toLowerCase() === c.toLowerCase())
+    if (found) return found
+  }
+  return names.find((n) => candidates.some((c) => n.toLowerCase().includes(c))) ?? null
+}
 
 export type FileInfo = { name: string; size: number; rows: number; columns: number } | null
 
@@ -18,6 +55,8 @@ type DashboardState = {
   sortCol: string | null
   sortDir: 'asc' | 'desc'
   searchQuery: string
+  embeddingStatus: 'idle' | 'loading' | 'ready' | 'error'
+  topSimilarRows: RagHit[] | null
 }
 
 type DashboardDerived = {
@@ -30,11 +69,18 @@ type DashboardDerived = {
   byCategory: { name: string; value: number }[]
   byProduct: { name: string; value: number }[]
   anomalies: ReturnType<typeof detectAnomaliesZScore>
-  autoCharts: { config: ChartConfig; data: { name: string; value: number }[] }[]
+  autoCharts: { config: ChartConfig; data: { name: string; value: number }[] | { x: number; y: number }[] }[]
   nullPercentages: Record<string, number>
   dateRange: { min: string; max: string } | null
   topCategories: Record<string, { name: string; value: number }[]>
   suggestedQuestions: string[]
+  dateCol: string | null
+  primaryCat: string | null
+  catCols: string[]
+  numCols: string[]
+  salesCol: string | null
+  unitsCol: string | null
+  customersCol: string | null
 }
 
 type DashboardActions = {
@@ -48,6 +94,7 @@ type DashboardActions = {
   setLoading: (v: boolean) => void
   setSort: (col: string | null, dir?: 'asc' | 'desc') => void
   setSearch: (query: string) => void
+  ragQuery: (query: string, topK?: number) => Promise<RagHit[] | null>
 }
 
 type DashboardContextValue = DashboardState & DashboardDerived & DashboardActions
@@ -81,18 +128,64 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [sortCol, setSortCol] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [searchQuery, setSearchQuery] = useState('')
+  const [embeddingStatus, setEmbeddingStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+  const [topSimilarRows, setTopSimilarRows] = useState<RagHit[] | null>(null)
 
   const profile = useMemo(() => (rawRows ? profileDataset(rawRows) : null), [rawRows])
   const columns = useMemo(() => profile?.columns ?? [], [profile])
   const allowedColumns = useMemo(() => columns.map((c) => c.name), [columns])
 
   const filteredRows = useMemo(() => (rawRows ? applyFilters(rawRows, filters) : []), [rawRows, filters])
-  const metrics = useMemo(() => (filteredRows.length ? computeMetrics(filteredRows) : rawRows ? computeMetrics(filteredRows) : null), [filteredRows, rawRows])
-  const timeSeries = useMemo(() => (filteredRows.length ? toTimeSeries(filteredRows, 'date', 'sales') : []), [filteredRows])
-  const byCity = useMemo(() => (filteredRows.length ? toBarData(filteredRows, 'city', 'sales').slice(0, 6) : []), [filteredRows])
-  const byCategory = useMemo(() => (filteredRows.length ? toBarData(filteredRows, 'category', 'sales').slice(0, 6) : []), [filteredRows])
-  const byProduct = useMemo(() => (filteredRows.length ? toBarData(filteredRows, 'product', 'sales').slice(0, 6) : []), [filteredRows])
-  const anomalies = useMemo(() => (filteredRows.length ? detectAnomaliesZScore(filteredRows, 'sales', 2.5).slice(0, 5) : []), [filteredRows])
+  
+  const dateCol = detectDateColumn(columns, rawRows ?? [])
+  const numCols = detectNumericColumns(columns)
+  const catCols = detectCategoricalColumns(columns)
+  const salesCol = pickColumn(numCols, ['sales', 'amount', 'total', 'revenue', 'value', 'price']) ?? numCols[0] ?? null
+  const unitsCol = pickColumn(numCols, ['units', 'quantity', 'qty', 'count']) ?? numCols.find((n) => n !== salesCol) ?? numCols[0] ?? null
+  const customersCol = pickColumn(numCols, ['customers', 'clients', 'users', 'orders']) ?? numCols.find((n) => n !== salesCol && n !== unitsCol) ?? numCols[0] ?? null
+
+  const metrics = useMemo(() => {
+    if (!filteredRows.length) return rawRows ? computeMetrics(filteredRows, salesCol ?? 'sales', unitsCol ?? 'units', customersCol ?? 'customers') : null
+    return computeMetrics(filteredRows, salesCol ?? 'sales', unitsCol ?? 'units', customersCol ?? 'customers')
+  }, [filteredRows, rawRows, salesCol, unitsCol, customersCol])
+  
+  const timeSeries = useMemo(() => {
+    if (!filteredRows.length || !dateCol) return []
+    const valCol = salesCol ?? numCols[0]
+    if (!valCol) return []
+    return toTimeSeries(filteredRows, dateCol, valCol)
+  }, [filteredRows, dateCol, salesCol, numCols])
+  
+  const primaryCat = catCols[0] ?? null
+  
+  const byCity = useMemo(() => {
+    if (!filteredRows.length || !primaryCat) return []
+    const valCol = salesCol ?? numCols[0]
+    if (!valCol) return []
+    return toBarData(filteredRows, primaryCat, valCol).slice(0, 6)
+  }, [filteredRows, primaryCat, salesCol, numCols])
+  
+  const byCategory = useMemo(() => {
+    if (!filteredRows.length || catCols.length < 2) return []
+    const valCol = salesCol ?? numCols[0]
+    if (!valCol) return []
+    return toBarData(filteredRows, catCols[1], valCol).slice(0, 6)
+  }, [filteredRows, catCols, salesCol, numCols])
+  
+  const byProduct = useMemo(() => {
+    if (!filteredRows.length || catCols.length < 3) return []
+    const valCol = salesCol ?? numCols[0]
+    if (!valCol) return []
+    return toBarData(filteredRows, catCols[2], valCol).slice(0, 6)
+  }, [filteredRows, catCols, salesCol, numCols])
+  
+  const anomalies = useMemo(() => {
+    if (!filteredRows.length) return []
+    const valCol = salesCol ?? numCols[0]
+    if (!valCol) return []
+    return detectAnomaliesZScore(filteredRows, valCol, 2.5).slice(0, 5)
+  }, [filteredRows, salesCol, numCols])
+  
   const autoCharts = useMemo(() => suggestCharts(columns, filteredRows), [columns, filteredRows])
 
   const nullPercentages = useMemo(() => {
@@ -105,38 +198,37 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [profile])
 
   const dateRange = useMemo(() => {
-    if (!rawRows) return null
-    const dates = rawRows.map((r) => String(r['date'] ?? '')).filter((s) => !Number.isNaN(Date.parse(s)) && /\d{4}-\d{2}-\d{2}/.test(s))
+    if (!rawRows || !dateCol) return null
+    const dates = rawRows.map((r) => String(r[dateCol] ?? '')).filter((s) => !Number.isNaN(Date.parse(s)) && /\d{4}-\d{2}-\d{2}/.test(s))
     if (!dates.length) return null
     dates.sort()
     return { min: dates[0], max: dates[dates.length - 1] }
-  }, [rawRows])
+  }, [rawRows, dateCol])
 
   const topCategories = useMemo(() => {
     if (!columns.length || !filteredRows.length) return {}
     const out: Record<string, { name: string; value: number }[]> = {}
-    const catCols = columns.filter((c) => c.type === 'string' && c.distinctCount >= 2 && c.distinctCount <= 20)
+    const valCol = salesCol ?? numCols[0]
+    if (!valCol) return out
     for (const c of catCols.slice(0, 5)) {
-      out[c.name] = toBarData(filteredRows, c.name, 'sales').slice(0, 5)
+      out[c] = toBarData(filteredRows, c, valCol).slice(0, 5)
     }
     return out
-  }, [columns, filteredRows])
+  }, [columns, filteredRows, catCols, salesCol, numCols])
 
   const suggestedQuestions = useMemo(() => {
     if (!columns.length) return []
     const qs: string[] = []
-    const numCols = columns.filter((c) => c.type === 'number')
-    const catCols = columns.filter((c) => c.type === 'string' && c.distinctCount >= 2 && c.distinctCount <= 20)
-    const dateCols = columns.filter((c) => c.type === 'date')
+    const valCol = salesCol ?? numCols[0]
     const hasFilters = filters.length > 0
-    if (catCols.length && numCols.length) {
-      qs.push(`Show ${numCols[0].name} by ${catCols[0].name} in a bar chart`)
+    if (catCols.length && valCol) {
+      qs.push(`Show ${valCol} by ${catCols[0]} in a bar chart`)
     }
-    if (dateCols.length && numCols.length) {
-      qs.push(`Show ${numCols[0].name} trend over ${dateCols[0].name}`)
+    if (dateCol && valCol) {
+      qs.push(`Show ${valCol} trend over ${dateCol}`)
     }
-    if (catCols.length >= 2) {
-      qs.push(`Compare ${catCols[0].name} vs ${catCols[1].name} by ${numCols[0]?.name ?? 'sales'}`)
+    if (catCols.length >= 2 && valCol) {
+      qs.push(`Compare ${catCols[0]} vs ${catCols[1]} by ${valCol}`)
     }
     if (hasFilters) {
       qs.push('Clear all filters')
@@ -145,7 +237,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       qs.push('Show anomalies in detail')
     }
     return qs.slice(0, 5)
-  }, [columns, filters.length, anomalies.length])
+  }, [columns, filters.length, anomalies.length, catCols, dateCol, salesCol, numCols])
 
   const setDataset = useCallback((rows: Row[], info: FileInfo) => {
     if (!rows.length) { setError('CSV is empty or has no valid rows. Try another file or use demo data.'); return }
@@ -197,11 +289,28 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setSearchQuery(query)
   }, [])
 
+  const ragQuery = useCallback(async (query: string, topK = 3): Promise<RagHit[] | null> => {
+    if (!rawRows || !columns.length) return null
+    try {
+      setEmbeddingStatus('loading')
+      const result = await ragSearch(rawRows, columns, query, topK)
+      setTopSimilarRows(result.hits)
+      setEmbeddingStatus('ready')
+      return result.hits
+    } catch (err) {
+      console.warn('[RAG] query failed', err)
+      setEmbeddingStatus('error')
+      return null
+    }
+  }, [rawRows, columns])
+
   const value: DashboardContextValue = {
-    rawRows, fileInfo, filters, activeChart, error, loading, sortCol, sortDir, searchQuery,
+    rawRows, fileInfo, filters, activeChart, error, loading, sortCol, sortDir, searchQuery, embeddingStatus, topSimilarRows,
     profile, columns, filteredRows, metrics, timeSeries, byCity, byCategory, byProduct, anomalies, autoCharts,
     nullPercentages, dateRange, topCategories, suggestedQuestions,
+    dateCol, primaryCat, catCols, numCols, salesCol, unitsCol, customersCol,
     setDataset, clearDataset, addFilter, removeFilter, clearFilters, setActiveChart, setError, setLoading, setSort, setSearch,
+    ragQuery,
   }
 
   return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>

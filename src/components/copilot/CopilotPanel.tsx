@@ -5,12 +5,13 @@ import { useDashboard } from '../../state/DashboardContext'
 import type { FilterOperator, ChartConfig } from '../../data/types'
 import type { MascotaMood } from '../../types/mascota'
 
-const COPILOT_INSTRUCTIONS = `You are Copixi AI Data Analyst. You have tools: setFilter, clearFilters, setChart, setDateRange, compareValues, showInsight, sortData, searchData, explainColumn, getTopCategories, removeFilter.
+const COPILOT_INSTRUCTIONS = `You are Copixi AI Data Analyst. You have tools: setFilter, clearFilters, setChart, setDateRange, compareValues, showInsight, sortData, searchData, explainColumn, getTopCategories, removeFilter, ragQuery.
 
 RULES:
 - Always validate columns against the whitelist before calling any action.
 - Prefer actions over plain text when the user asks to change the dashboard.
 - When the user asks a question about the data, use explainColumn or getTopCategories to provide structured answers.
+- For vague or exploratory questions like "what do you see", "tell me about the data", "search for X", use ragQuery to retrieve relevant rows via semantic search.
 - Keep answers concise and cite numbers from context.
 - Never mention raw rows or suggest uploading data to a server. Data stays in the browser.
 - If asked for trends, reference timeSeries. If asked for anomalies, reference anomalies.
@@ -21,10 +22,15 @@ function setMascotaMood(mood: MascotaMood) {
   window.dispatchEvent(new CustomEvent('copixi:mascota-mood', { detail: mood }))
 }
 
+function mascotaSpeak(text: string) {
+  try { (window as any).mascotaSpeak?.(text) } catch {}
+}
+
 export function CopilotPanel() {
   const {
     rawRows, filteredRows, columns, filters, activeChart, addFilter, removeFilter, clearFilters, setActiveChart, setError, setSort, setSearch,
     nullPercentages, dateRange, topCategories, suggestedQuestions, anomalies, autoCharts, metrics, timeSeries, byCity, byCategory, byProduct,
+    embeddingStatus, topSimilarRows, ragQuery,
   } = useDashboard()
 
   const [lastAction, setLastAction] = useState<string | null>(null)
@@ -52,6 +58,9 @@ export function CopilotPanel() {
     autoCharts: autoCharts.map((c) => ({ chartType: c.config.chartType, x: c.config.x, y: c.config.y, title: c.config.title, pointCount: c.data.length })),
     suggestedQuestions,
     anomalies: anomalies.slice(0, 3).map((a) => ({ type: a.type, date: String(a.row['date'] ?? `#${a.index}`), column: a.column, value: a.value, zScore: a.zScore })),
+    embeddingStatus,
+    embeddingRowCount: rawRows?.length ?? 0,
+    topSimilarRows: topSimilarRows?.slice(0, 3).map((r) => ({ index: r.index, score: r.score.toFixed(3), snippet: r.snippet })) ?? [],
   }
 
   useCopilotReadable({
@@ -146,7 +155,7 @@ export function CopilotPanel() {
     handler: async ({ chartType, x, y }) => {
       setMascotaMood('guino')
       setLastAction(`Setting chart: ${chartType} ${x} vs ${y}…`)
-      const validTypes: ChartConfig['chartType'][] = ['line', 'bar', 'area', 'pie']
+      const validTypes: ChartConfig['chartType'][] = ['line', 'bar', 'area', 'pie', 'scatter']
       if (!validTypes.includes(chartType as ChartConfig['chartType'])) {
         const msg = `chartType must be one of ${validTypes.join(', ')}`
         if (import.meta.env.DEV) console.warn('[Copixi] AI setChart rejected', { chartType, x, y, reason: msg })
@@ -176,7 +185,8 @@ export function CopilotPanel() {
     handler: async ({ from, to }) => {
       setMascotaMood('guino')
       setLastAction(`Applying date range ${from} → ${to}…`)
-      if (!allowedColumns.includes('date')) {
+      const dateCol = columns.find((c) => c.type === 'date')?.name ?? columns.find((c) => /date|time|fecha|day/i.test(c.name))?.name
+      if (!dateCol) {
         const msg = 'No date column in dataset'
         if (import.meta.env.DEV) console.warn('[Copixi] AI setDateRange rejected', { from, to, reason: msg })
         setError(msg); setLastAction(null); setMascotaMood('enojado')
@@ -189,13 +199,14 @@ export function CopilotPanel() {
         setError(msg); setLastAction(null); setMascotaMood('enojado')
         return msg
       }
-      const preserved = filters.filter((f) => f.column !== 'date')
+      const preserved = filters.filter((f) => f.column !== dateCol)
       clearFilters()
       for (const f of preserved) addFilter(f)
-      addFilter({ column: 'date', operator: 'gt', value: from })
-      addFilter({ column: 'date', operator: 'lt', value: to })
+      addFilter({ column: dateCol, operator: 'gt', value: from })
+      addFilter({ column: dateCol, operator: 'lt', value: to })
       setLastAction(null)
       setMascotaMood('feliz')
+      mascotaSpeak(`Date range ${from} to ${to}`)
       return `Date range applied: ${from} to ${to}`
     },
   })
@@ -335,7 +346,7 @@ export function CopilotPanel() {
     name: 'getTopCategories',
     description: 'Get top N values for a categorical column by sales. n is 3-10.',
     parameters: [
-      { name: 'column', type: 'string', description: `Categorical column from: ${allowedColumns.join(', ')}`, required: true },
+      { name: 'column', type: 'string', description: `Categorical column from: ${allowedColumns.join(', ') || 'no dataset loaded'}`, required: true },
       { name: 'n', type: 'number', description: 'How many top values (3-10)', required: true },
     ],
     handler: async ({ column, n }) => {
@@ -351,7 +362,31 @@ export function CopilotPanel() {
       const text = top.map((t, i) => `${i + 1}. ${t.name}: $${t.value.toLocaleString()}`).join('\n')
       setLastAction(null)
       setMascotaMood('feliz')
+      mascotaSpeak(`Top ${top.length} ${column} by sales`)
       return `Top ${top.length} ${column} by sales:\n${text}`
+    },
+  })
+
+  useCopilotAction({
+    name: 'ragQuery',
+    description: 'Semantic search across dataset rows. Use this for vague questions like "what do you see", "find rows about X", "search for Y". Returns top-K matching rows as snippets.',
+    parameters: [
+      { name: 'query', type: 'string', description: 'Natural language search query', required: true },
+      { name: 'topK', type: 'number', description: 'Number of results (1-5, default 3)', required: false },
+    ],
+    handler: async ({ query, topK }) => {
+      setMascotaMood('duda')
+      setLastAction(`Searching semantically: "${query}"…`)
+      const k = Math.min(5, Math.max(1, Number(topK) || 3))
+      const hits = await ragQuery(query, k)
+      if (!hits || hits.length === 0) {
+        setLastAction(null); setMascotaMood('duda')
+        return 'No matching rows found for that query.'
+      }
+      const snippets = hits.map((h, i) => `${i + 1}. [${h.score.toFixed(2)}] ${h.snippet}`).join('\n')
+      setLastAction(null); setMascotaMood('feliz')
+      mascotaSpeak(`Found ${hits.length} matching rows`)
+      return `Semantic search results for "${query}":\n${snippets}`
     },
   })
 
