@@ -99,6 +99,17 @@ function DashboardContent() {
   const hasData = !!rawRows
 
   useEffect(() => {
+    const header = document.querySelector('.header')
+    if (!header) return
+    const onScroll = () => {
+      if (window.scrollY > 8) header.classList.add('scrolled')
+      else header.classList.remove('scrolled')
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<SavedAnalysis>).detail
       if (!detail) return
@@ -256,7 +267,12 @@ function DashboardContent() {
             </div>
 
             <div className="landing-right">
-              <Mascota mood={mascotaMood} subtitulo={loading ? 'Analizando…' : error ? 'Algo salió mal' : hasData ? '¡Datos cargados!' : '¡Sube tu CSV o prueba el demo!'} />
+              <Mascota mood={mascotaMood} subtitulo={
+                loading ? 'Procesando datos…' :
+                error ? 'Ups, algo falló' :
+                hasData ? 'Dataset cargado. Pregúntame.' :
+                'Soy CERI, tu analista IA. Sube un CSV o prueba el demo.'
+              } />
             </div>
           </div>
         </section>

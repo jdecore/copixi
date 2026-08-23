@@ -23,8 +23,8 @@ export function Mascota({ mood = 'neutro', subtitulo = '' }: MascotaProps) {
       const cy = rect.top + rect.height * 0.38
       const dx = (e.clientX - cx) / (rect.width || 1)
       const dy = (e.clientY - cy) / (rect.height || 1)
-      el.style.setProperty('--mouse-x', `${Math.max(-8, Math.min(8, dx * 10))}px`)
-      el.style.setProperty('--mouse-y', `${Math.max(-6, Math.min(6, dy * 8))}px`)
+      el.style.setProperty('--mouse-x', `${Math.max(-10, Math.min(10, dx * 12))}px`)
+      el.style.setProperty('--mouse-y', `${Math.max(-8, Math.min(8, dy * 10))}px`)
     }
     window.addEventListener('mousemove', handler, { passive: true })
     return () => window.removeEventListener('mousemove', handler)
@@ -40,16 +40,17 @@ export function Mascota({ mood = 'neutro', subtitulo = '' }: MascotaProps) {
 
   return (
     <div id="mascota" ref={rootRef} className={moodClass} aria-label={`Mascota estado: ${localMood}`}>
-      <div className="head">
-        <div className="ceja izq" aria-hidden />
-        <div className="ceja der" aria-hidden />
-        <div className="ojo izq"><div className="pupila" /></div>
-        <div className="ojo der"><div className="pupila" /></div>
-        <div className="mejilla izq" aria-hidden />
-        <div className="mejilla der" aria-hidden />
-        <div className="brillo" aria-hidden />
+      <div className="slime">
+        <div className="slime-body">
+          <div className="slime-glow" aria-hidden />
+          <div className="eye left"><div className="pupil" /></div>
+          <div className="eye right"><div className="pupil" /></div>
+          <div className="mouth" aria-hidden />
+          <div className="cheek left" aria-hidden />
+          <div className="cheek right" aria-hidden />
+        </div>
+        <div className="slime-base" aria-hidden />
       </div>
-      <div className="cuerpo" aria-hidden />
       <div id="subtitulos">{subtitulo}</div>
     </div>
   )
