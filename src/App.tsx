@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis } from 'recharts'
 import './App.css'
-import { parseCSV, validateFile } from './data/parser'
+import { parseCSV } from './data/parser'
+import { parseAnyFile, validateAnyFile } from './data/universalParser'
 import { DashboardProvider, useDashboard } from './state/DashboardContext'
 import { ChartCard } from './components/dashboard/ChartCard'
+import { SummaryCard } from './components/dashboard/SummaryCard'
 import { Mascota } from './components/ui/Mascota'
 import { lazy, Suspense } from 'react'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
@@ -88,7 +90,7 @@ function ChartRenderer({ config, data, height = 260 }: { config: { chartType: st
 }
 
 function DashboardContent() {
-  const { rawRows, fileInfo, filteredRows, error, loading, setDataset, setError, setLoading, autoCharts, metrics } = useDashboard()
+  const { rawRows, fileInfo, filteredRows, error, loading, setDataset, setError, setLoading, autoCharts, metrics, generateSummary } = useDashboard()
   const [dragging, setDragging] = useState(false)
   const [mascotaMood, setMascotaMood] = useState<MascotaMood>('neutro')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -139,20 +141,37 @@ function DashboardContent() {
   }, [setDataset])
 
   const parseFile = useCallback(async (file: File) => {
-    const v = validateFile(file, 15)
+    const v = validateAnyFile(file, 15)
     if (!v.valid) { setError(v.error ?? 'Invalid file.'); return }
     setLoading(true); setError(null)
     try {
-      const { rows: data, errors } = await parseCSV(file)
-      if (errors.length) console.warn('[Copixi] Papa errors', errors)
-      if (!data.length) { setError('CSV is empty or has no valid rows. Try another file or use demo data.'); return }
-      handleRows(data as unknown as typeof filteredRows, file.name, file.size)
+      const result = await parseAnyFile(file)
+      if ('needsGemini' in result && result.needsGemini) {
+        // Token-efficient JSON extract via Gemini
+        const res = await fetch('/api/gemini', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'extract', text: result.text, filename: result.filename, hint: result.hint }),
+        })
+        const json = await res.json() as { rows?: unknown[]; error?: string; detail?: string }
+        if (!res.ok) throw new Error(json.error ?? json.detail ?? `Extract failed ${res.status}`)
+        const rows = (json.rows ?? []) as unknown as typeof filteredRows
+        if (!rows.length) throw new Error('No se pudo extraer tabla del documento. Prueba con Excel o CSV.')
+        handleRows(rows as unknown as typeof filteredRows, file.name, file.size)
+        // resumen debajo de gráficas
+        setTimeout(() => generateSummary(), 300)
+        return
+      }
+      const rows = (result as { rows: unknown[] }).rows
+      if (!rows?.length) { setError('File is empty or has no valid rows. Try another file or use demo data.'); return }
+      handleRows(rows as unknown as typeof filteredRows, file.name, file.size)
+      setTimeout(() => generateSummary(), 300)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to parse CSV')
+      setError(err instanceof Error ? err.message : 'Failed to parse file')
     } finally {
       setLoading(false)
     }
-  }, [handleRows, setError, setLoading])
+  }, [handleRows, setError, setLoading, generateSummary])
 
   const handleDemo = useCallback(async () => {
     setLoading(true); setError(null)
@@ -163,10 +182,11 @@ function DashboardContent() {
       const { rows: data, errors } = await parseCSV(text)
       if (errors.length) console.warn('[Copixi] demo parse errors', errors)
       handleRows(data as unknown as typeof filteredRows, 'demo.csv', new Blob([text]).size)
+      setTimeout(() => generateSummary(), 300)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load demo data')
     } finally { setLoading(false) }
-  }, [handleRows, setError, setLoading])
+  }, [handleRows, setError, setLoading, generateSummary])
 
   useEffect(() => {
     const handler = () => handleDemo()
@@ -212,21 +232,21 @@ function DashboardContent() {
                     <i className="pixelart-icons-font-upload" aria-hidden /> Analyze your data
                   </button>
                 </div>
-                <div
+                  <div
                   className={`pixel-drop ${dragging ? 'dragging' : ''}`}
                   onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
                   onDragLeave={() => setDragging(false)}
                   onDrop={onDrop}
                   role="region"
-                  aria-label="Upload CSV or TSV"
+                  aria-label="Upload CSV, Excel, PDF or DOCX"
                 >
                   <div className="pixel-drop-inner">
                     <div className="pixel-drop-icon" aria-hidden>
                       <i className="pixelart-icons-font-file" />
                     </div>
                     <div className="pixel-drop-title">DRAG & DROP</div>
-                    <div className="pixel-drop-sub">.CSV / .TSV — max 15 MB</div>
-                    <input ref={inputRef} type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f) }} />
+                    <div className="pixel-drop-sub">CSV / Excel / PDF / DOCX — max 15 MB</div>
+                    <input ref={inputRef} type="file" accept=".csv,.tsv,.xlsx,.xls,.pdf,.docx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f) }} />
                     <button className="btn btn-secondary small" style={{ marginTop: 10 }} onClick={() => inputRef.current?.click()} type="button">Choose file</button>
                     {fileInfo && <div className="file-meta"><span>{fileInfo.name}</span><span>{formatBytes(fileInfo.size)}</span><span>{fileInfo.rows} rows</span><span>{fileInfo.columns} cols</span></div>}
                     {loading && <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center' }}><span className="skeleton" style={{ width: 120 }} /> <span className="skeleton" style={{ width: 80 }} /></div>}
@@ -257,7 +277,7 @@ function DashboardContent() {
             <div>
               <div className="charts-full">
                 {autoCharts.length === 0 ? (
-                  <div className="empty">No chartable columns detected. Ensure your CSV has at least one numeric or categorical column.</div>
+                  <div className="empty">No chartable columns detected. Ensure your file has at least one numeric or categorical column.</div>
                 ) : (
                   autoCharts.map((c) => (
                     <ChartCard key={`${c.config.chartType}|${c.config.x}|${c.config.y}`} title={c.config.title ?? `${c.config.y} by ${c.config.x}`} icon="pixelart-icons-font-chart" empty={c.data.length ? null : 'No data for this chart.'}>
@@ -266,6 +286,7 @@ function DashboardContent() {
                   ))
                 )}
               </div>
+              <SummaryCard />
 
               <div style={{ marginTop: 24 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>

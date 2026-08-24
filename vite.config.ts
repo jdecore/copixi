@@ -17,6 +17,9 @@ export default defineConfig({
           if (id.includes('node_modules/@copilotkit')) return 'copilot'
           if (id.includes('node_modules/papaparse')) return 'papaparse'
           if (id.includes('node_modules/@google/generative-ai')) return 'gemini'
+          if (id.includes('node_modules/xlsx')) return 'excel'
+          if (id.includes('node_modules/pdfjs-dist')) return 'pdf'
+          if (id.includes('node_modules/mammoth')) return 'docx'
         },
       },
     },

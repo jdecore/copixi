@@ -57,6 +57,9 @@ type DashboardState = {
   searchQuery: string
   embeddingStatus: 'idle' | 'loading' | 'ready' | 'error'
   topSimilarRows: RagHit[] | null
+  summary: string | null
+  summaryStatus: 'idle' | 'loading' | 'ready' | 'error'
+  summaryError: string | null
 }
 
 type DashboardDerived = {
@@ -95,6 +98,8 @@ type DashboardActions = {
   setSort: (col: string | null, dir?: 'asc' | 'desc') => void
   setSearch: (query: string) => void
   ragQuery: (query: string, topK?: number) => Promise<RagHit[] | null>
+  generateSummary: () => Promise<void>
+  setSummary: (s: string | null) => void
 }
 
 type DashboardContextValue = DashboardState & DashboardDerived & DashboardActions
@@ -130,6 +135,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [embeddingStatus, setEmbeddingStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [topSimilarRows, setTopSimilarRows] = useState<RagHit[] | null>(null)
+  const [summary, setSummary] = useState<string | null>(null)
+  const [summaryStatus, setSummaryStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+  const [summaryError, setSummaryError] = useState<string | null>(null)
 
   const profile = useMemo(() => (rawRows ? profileDataset(rawRows) : null), [rawRows])
   const columns = useMemo(() => profile?.columns ?? [], [profile])
@@ -249,6 +257,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setSortDir('asc')
     setSearchQuery('')
     setError(null)
+    setSummary(null)
+    setSummaryStatus('idle')
+    setSummaryError(null)
   }, [])
 
   const clearDataset = useCallback(() => {
@@ -260,6 +271,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setSortDir('asc')
     setSearchQuery('')
     setError(null)
+    setSummary(null)
+    setSummaryStatus('idle')
+    setSummaryError(null)
   }, [])
 
   const addFilter = useCallback((f: Filter): boolean => {
@@ -304,13 +318,49 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
   }, [rawRows, columns])
 
+  const generateSummary = useCallback(async () => {
+    if (!rawRows || !columns.length) return
+    setSummaryStatus('loading')
+    setSummaryError(null)
+    try {
+      // Build minimal JSON context — tokens mínimos (§9)
+      const ctx = {
+        rowCount: rawRows.length,
+        filteredCount: filteredRows.length,
+        columns: columns.map((c) => ({ name: c.name, type: c.type, distinctCount: c.distinctCount })),
+        metrics,
+        topProducts: byProduct.slice(0, 3),
+        salesByCity: byCity.slice(0, 3),
+        salesByCategory: byCategory.slice(0, 3),
+        trends: timeSeries.slice(0, 4),
+        currentFilters: filters,
+        autoCharts: autoCharts.slice(0, 4).map((c) => ({ x: c.config.x, y: c.config.y, type: c.config.chartType })),
+      }
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'summary', context: ctx }),
+      })
+      const json = await res.json() as { text?: string; error?: string }
+      if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
+      const text = (json.text ?? '').trim()
+      if (!text) throw new Error('Empty summary')
+      setSummary(text)
+      setSummaryStatus('ready')
+    } catch (err) {
+      setSummaryError(err instanceof Error ? err.message : 'Failed to generate summary')
+      setSummaryStatus('error')
+    }
+  }, [rawRows, columns, filteredRows.length, metrics, byProduct, byCity, byCategory, timeSeries, filters, autoCharts])
+
   const value: DashboardContextValue = {
     rawRows, fileInfo, filters, activeChart, error, loading, sortCol, sortDir, searchQuery, embeddingStatus, topSimilarRows,
+    summary, summaryStatus, summaryError,
     profile, columns, filteredRows, metrics, timeSeries, byCity, byCategory, byProduct, anomalies, autoCharts,
     nullPercentages, dateRange, topCategories, suggestedQuestions,
     dateCol, primaryCat, catCols, numCols, salesCol, unitsCol, customersCol,
     setDataset, clearDataset, addFilter, removeFilter, clearFilters, setActiveChart, setError, setLoading, setSort, setSearch,
-    ragQuery,
+    ragQuery, generateSummary, setSummary,
   }
 
   return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>
