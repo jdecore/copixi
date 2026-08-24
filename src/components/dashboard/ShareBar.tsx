@@ -49,7 +49,7 @@ export function ShareBar() {
         <button className="btn btn-secondary small" onClick={handleCopy} type="button" disabled={!rawRows}>
           <i className="pixelart-icons-font-link" aria-hidden /> {copied ? 'Copied!' : 'Copy link'}
         </button>
-        <button className="btn btn-secondary small" onClick={() => { navigator.share?.({ title: 'Copixi analysis', url: buildShareUrl(filters, activeChart) }).catch(() => {}) }} type="button" disabled={!rawRows} style={{ display: ('share' in navigator) ? 'inline-flex' : 'none' }}>Share</button>
+        <button className="btn btn-secondary small" onClick={() => { navigator.share?.({ title: 'compexi analysis', url: buildShareUrl(filters, activeChart) }).catch(() => {}) }} type="button" disabled={!rawRows} style={{ display: ('share' in navigator) ? 'inline-flex' : 'none' }}>Share</button>
       </div>
     </div>
   )

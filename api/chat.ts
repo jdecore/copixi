@@ -50,7 +50,7 @@ function getModel() {
   return null
 }
 
-const EXCEL_SYSTEM = `Eres CERI, un experto en Microsoft Excel y análisis de datos. Responde en español, de forma concisa y práctica.
+const EXCEL_SYSTEM = `Eres compe, un experto en Microsoft Excel y análisis de datos. Responde en español, de forma concisa y práctica.
 
 Especialidades:
 - Fórmulas (BUSCARV, XLOOKUP, SUMAR.SI, SI.CONJUNTO, ÍNDICE/COINCIDIR, texto, fecha, lógicas).

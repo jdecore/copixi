@@ -16,13 +16,7 @@ import type { SavedAnalysis } from './lib/storage'
 import { saveDataset } from './lib/storage'
 import type { MascotaMood } from './types/mascota'
 
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
-const CHART_COLORS = ['#ff6b00', '#0e9f6e', '#c27803', '#e02424', '#64748b', '#8a2be2', '#00b4d8', '#ff8c2f']
+const CHART_COLORS = ['#ff6b00', '#166534', '#0a0a0a', '#c27803', '#64748b', '#0e9f6e', '#ff8c2f', '#1f2937']
 
 function ChartRenderer({ config, data, height = 260 }: { config: { chartType: string; x: string; y: string; title?: string }; data: { name: string; value: number }[] | { x: number; y: number }[]; height?: number }) {
   if (config.chartType === 'pie') {
@@ -206,111 +200,89 @@ function DashboardContent() {
       <a href="#main-content" className="skip-link">Skip to content</a>
       <header className="header">
         <div className="header-inner">
-          <div className="brand" aria-label="Copixi home">
+          <div className="brand" aria-label="compexi home">
             <span className="brand-mark" aria-hidden>◈</span>
-            <span>Copixi</span>
+            <span>compexi</span>
             <span className="brand-badge">Excel Expert</span>
           </div>
           <nav className="nav" aria-label="Main navigation" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            {hasData && (
-              <button className="btn btn-secondary small" onClick={() => inputRef.current?.click()} type="button">
-                <i className="pixelart-icons-font-upload" aria-hidden /> New dataset
-              </button>
-            )}
+            <button className="btn btn-secondary small" onClick={() => inputRef.current?.click()} type="button">
+              <i className="pixelart-icons-font-upload" aria-hidden /> {hasData ? 'New dataset' : 'Upload'}
+            </button>
           </nav>
         </div>
       </header>
 
       <main className="main" id="main-content">
-        {!hasData && !loading && (
-          <section className="landing" aria-labelledby="headline">
-            <div className="landing-center">
-              <Mascota mood={mascotaMood} subtitulo={loading ? 'Procesando datos…' : error ? 'Ups, algo falló' : 'Soy CERI, tu analista IA.'} size={220} />
-              <h1 id="headline">Tu experto en Excel y análisis de datos</h1>
-              <p className="sub">Sube un CSV o pregúntame lo que sea de Excel. Tus datos se quedan en tu navegador.</p>
-              <div className="cta-row">
-                <button className="btn btn-primary" onClick={() => inputRef.current?.click()} type="button">
-                  <i className="pixelart-icons-font-upload" aria-hidden /> Analyze your data
-                </button>
-              </div>
-              <div
-                className={`pixel-drop ${dragging ? 'dragging' : ''}`}
-                onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={onDrop}
-                role="region"
-                aria-label="Upload CSV, Excel, PDF or DOCX"
-              >
-                <div className="pixel-drop-inner">
-                  <div className="pixel-drop-icon" aria-hidden>
-                    <i className="pixelart-icons-font-file" />
-                  </div>
-                  <div className="pixel-drop-title">DRAG &amp; DROP</div>
-                  <div className="pixel-drop-sub">CSV / Excel / PDF / DOCX — max 15 MB</div>
-                  <input ref={inputRef} type="file" accept=".csv,.tsv,.xlsx,.xls,.pdf,.docx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f) }} />
-                  <button className="btn btn-secondary small" style={{ marginTop: 10 }} onClick={() => inputRef.current?.click()} type="button">Choose file</button>
-                  {fileInfo && <div className="file-meta"><span>{fileInfo.name}</span><span>{formatBytes(fileInfo.size)}</span><span>{fileInfo.rows} rows</span><span>{fileInfo.columns} cols</span></div>}
-                  {loading && <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center' }}><span className="skeleton" style={{ width: 120 }} /> <span className="skeleton" style={{ width: 80 }} /></div>}
-                  {error && <div role="alert" style={{ marginTop: 12, color: 'var(--color-danger)', fontSize: 13, background: '#fef2f2', border: '1px solid #fecaca', padding: '8px 12px', borderRadius: 8, display: 'inline-block' }}>{error}</div>}
-                </div>
-              </div>
+        <section
+          className={`hero-excel ${dragging ? 'dropping' : ''}`}
+          aria-labelledby="excel-headline"
+          onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+        >
+          <Mascota
+            mood={mascotaMood}
+            subtitulo={
+              loading ? 'Procesando datos…' :
+              error ? 'Ups, algo falló' :
+              hasData ? `${fileInfo?.rows ?? 0} filas · ${fileInfo?.columns ?? 0} columnas` :
+              'Soy compe, tu analista IA.'
+            }
+            size={200}
+          />
+              <h2 id="excel-headline" className="sr-only">Chat con compe</h2>
+
+          {!hasData && !loading && (
+            <div className="hero-upload">
+              <button className="btn btn-primary" onClick={() => inputRef.current?.click()} type="button">
+                <i className="pixelart-icons-font-upload" aria-hidden /> Subir CSV / Excel
+              </button>
+              <span className="hero-upload-hint">o arrastra un archivo aquí · también PDF / DOCX</span>
+              <input ref={inputRef} type="file" accept=".csv,.tsv,.xlsx,.xls,.pdf,.docx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f) }} />
             </div>
-          </section>
-        )}
+          )}
+
+          <ExcelChat />
+
+          {error && (
+            <div role="alert" className="hero-error">{error}</div>
+          )}
+        </section>
 
         {hasData && (
-          <>
-            <section className="hero-excel" aria-labelledby="excel-headline">
-              <Mascota
-                mood={mascotaMood}
-                subtitulo={
-                  loading ? 'Procesando datos…' :
-                  error ? 'Ups, algo falló' :
-                  `${fileInfo?.rows ?? 0} filas · ${fileInfo?.columns ?? 0} columnas`
-                }
-                size={200}
-              />
-              <h2 id="excel-headline" className="sr-only">Chat con CERI</h2>
-              <ExcelChat />
-            </section>
-
-            <section className="data-layer" aria-label="Análisis de datos">
-              <div className="data-layer-head">
-                <h3><i className="pixelart-icons-font-chart" aria-hidden /> Análisis del dataset</h3>
-                <button className="btn btn-secondary small" type="button" onClick={() => setDataOpen((o) => !o)} aria-expanded={dataOpen}>
-                  {dataOpen ? <><i className="pixelart-icons-font-chevron-up" aria-hidden /> Ocultar</> : <><i className="pixelart-icons-font-chevron-down" aria-hidden /> Ver análisis</>}
-                </button>
-              </div>
-              {dataOpen && (
-                <div className="data-layer-body">
-                  <FilterBar />
-                  <div className="charts-full">
-                    {autoCharts.length === 0 ? (
-                      <div className="empty">No chartable columns detected. Ensure your file has at least one numeric or categorical column.</div>
-                    ) : (
-                      autoCharts.map((c) => (
-                        <ChartCard key={`${c.config.chartType}|${c.config.x}|${c.config.y}`} title={c.config.title ?? `${c.config.y} by ${c.config.x}`} icon="pixelart-icons-font-chart" empty={c.data.length ? null : 'No data for this chart.'}>
-                          <ChartRenderer config={c.config} data={c.data as any} />
-                        </ChartCard>
-                      ))
-                    )}
-                  </div>
-                  <SummaryCard />
-                  <DataTable />
-                  <DataProfiler />
-                  <ExportBar />
+          <section className="data-layer" aria-label="Análisis de datos">
+            <div className="data-layer-head">
+              <h3><i className="pixelart-icons-font-chart" aria-hidden /> Análisis del dataset</h3>
+              <button className="btn btn-secondary small" type="button" onClick={() => setDataOpen((o) => !o)} aria-expanded={dataOpen}>
+                {dataOpen ? <><i className="pixelart-icons-font-chevron-up" aria-hidden /> Ocultar</> : <><i className="pixelart-icons-font-chevron-down" aria-hidden /> Ver análisis</>}
+              </button>
+            </div>
+            {dataOpen && (
+              <div className="data-layer-body">
+                <FilterBar />
+                <div className="charts-full">
+                  {autoCharts.length === 0 ? (
+                    <div className="empty">No chartable columns detected. Ensure your file has at least one numeric or categorical column.</div>
+                  ) : (
+                    autoCharts.map((c) => (
+                      <ChartCard key={`${c.config.chartType}|${c.config.x}|${c.config.y}`} title={c.config.title ?? `${c.config.y} by ${c.config.x}`} icon="pixelart-icons-font-chart" empty={c.data.length ? null : 'No data for this chart.'}>
+                        <ChartRenderer config={c.config} data={c.data as any} />
+                      </ChartCard>
+                    ))
+                  )}
                 </div>
-              )}
-            </section>
-          </>
-        )}
-
-        {!hasData && loading && (
-          <div className="empty" style={{ marginTop: 24 }}>Procesando tu archivo…</div>
+                <SummaryCard />
+                <DataTable />
+                <DataProfiler />
+                <ExportBar />
+              </div>
+            )}
+          </section>
         )}
       </main>
 
-      <footer className="footer" role="contentinfo">Copixi — AI Data Analyst · Tus datos se quedan en tu navegador · React + Papa Parse + Recharts + Gemini vía Vercel Function · <a href="https://github.com/anomalyco/opencode" style={{ color: 'inherit', textDecoration: 'underline' }}>Feedback</a></footer>
+      <footer className="footer" role="contentinfo">compexi — AI Data Analyst · Tus datos se quedan en tu navegador · React + Papa Parse + Recharts + Gemini vía Vercel Function · <a href="https://github.com/anomalyco/opencode" style={{ color: 'inherit', textDecoration: 'underline' }}>Feedback</a></footer>
     </>
   )
 }

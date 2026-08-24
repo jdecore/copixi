@@ -159,11 +159,11 @@ export function ExcelChat() {
   const suggestions = hasData ? suggestedQuestions : EXCEL_SUGGESTIONS
 
   return (
-    <div className="excel-chat card" aria-label="CERI Excel chat">
+    <div className="excel-chat card" aria-label="compe Excel chat">
       <div className="excel-chat-head">
         <div className="excel-chat-title">
           <i className="pixelart-icons-font-robot" aria-hidden />
-          <span>CERI · Experto en Excel</span>
+          <span>compe · Experto en Excel</span>
         </div>
         <div className="excel-chat-actions">
           {isTtsSupported() && (
@@ -182,8 +182,10 @@ export function ExcelChat() {
       <div className="excel-chat-log" ref={scrollRef} role="log" aria-live="polite">
         {messages.length === 0 && (
           <div className="excel-chat-welcome">
-            <p>Hola, soy <strong>CERI</strong>. Pregúntame lo que sea de Excel, fórmulas o análisis de datos.</p>
-            {hasData && <p className="excel-chat-hint">Tu dataset está cargado — puedo filtrar, graficar y comparar por ti.</p>}
+            <p>Hola, soy <strong>compe</strong>. Pregúntame lo que sea de Excel, fórmulas o análisis de datos.</p>
+            {hasData
+              ? <p className="excel-chat-hint">Tu dataset está cargado — puedo filtrar, graficar y comparar por ti.</p>
+              : <p className="excel-chat-hint">Sube un CSV o archivo para que analice tus datos, o pregúntame lo que sea de Excel.</p>}
           </div>
         )}
         {messages.map((m, i) => {
@@ -201,7 +203,7 @@ export function ExcelChat() {
           <div className="excel-msg excel-msg-ai" role="status">
             <div className="excel-msg-body excel-msg-thinking">
               <span className="skeleton" style={{ width: 10, height: 10, borderRadius: 999, display: 'inline-block' }} aria-hidden />
-              CERI está pensando…
+              compe está pensando…
             </div>
           </div>
         )}

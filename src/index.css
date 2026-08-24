@@ -4,12 +4,14 @@
   --color-bg: #ffffff;
   --color-surface: #f8fafc;
   --color-surface-2: #f1f5f9;
-  --color-text: #0f172a;
+  --color-text: #0a0a0a;
   --color-muted: #64748b;
   --color-primary: #ff6b00;
   --color-primary-hover: #e65f00;
+  --color-accent: #166534;
+  --color-accent-hover: #14532d;
   --color-border: #e2e8f0;
-  --color-success: #0e9f6e;
+  --color-success: #166534;
   --color-warning: #c27803;
   --color-danger: #e02424;
 

@@ -27,7 +27,7 @@ export function HireBanner() {
     }}>
       <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <span aria-hidden>◈</span>
-        <strong>Copixi</strong> — Built by Juan Xi · <span style={{ opacity: 0.9 }}>Available for hire — Product Engineer (React/TS/AI)</span>
+        <strong>compexi</strong> — Built by Juan Xi · <span style={{ opacity: 0.9 }}>Available for hire — Product Engineer (React/TS/AI)</span>
         <span style={{ background: '#1e293b', border: '1px solid #334155', padding: '2px 8px', borderRadius: 999, fontSize: 11, marginLeft: 6 }}>Frontend-first · AI-native · 0$ infra</span>
       </span>
       <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
