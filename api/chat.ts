@@ -107,15 +107,24 @@ async function genOpenRouter(prompt: string, system: string): Promise<string> {
 
 async function generate(prompt: string, system: string): Promise<string> {
   const errors: string[] = []
-  try {
-    return await genGemini(prompt, system)
-  } catch (e) {
-    errors.push(`gemini: ${e instanceof Error ? e.message : String(e)}`)
+  // Gemini first (only if its key is actually configured, to avoid a misleading error)
+  if (process.env.GEMINI_API_KEY?.trim()) {
+    try {
+      return await genGemini(prompt, system)
+    } catch (e) {
+      errors.push(`gemini: ${e instanceof Error ? e.message : String(e)}`)
+    }
   }
-  try {
-    return await genOpenRouter(prompt, system)
-  } catch (e) {
-    errors.push(`openrouter: ${e instanceof Error ? e.message : String(e)}`)
+  // OpenRouter fallback (used if Gemini is missing or fails: quota, model, network)
+  if (process.env.OPENROUTER_API_KEY?.trim()) {
+    try {
+      return await genOpenRouter(prompt, system)
+    } catch (e) {
+      errors.push(`openrouter: ${e instanceof Error ? e.message : String(e)}`)
+    }
+  }
+  if (errors.length === 0) {
+    throw new Error('No AI provider configured (set GEMINI_API_KEY or OPENROUTER_API_KEY).')
   }
   throw new Error(errors.join(' | '))
 }
