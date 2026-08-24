@@ -197,36 +197,25 @@ function DashboardContent() {
 
   return (
     <div className="canvas-wrapper">
-      <a href="#main-content" className="skip-link">Skip to content</a>
-
-      {/* Floating Minimal Controls Bar (No traditional navbar) */}
+      {/* Floating Minimal Controls Bar (Sin botón de subir archivo) */}
       <div className="canvas-top-bar" role="navigation" aria-label="Controles rápidos">
         <div className="canvas-brand" aria-label="compexi AI">
           <span className="brand-mark" aria-hidden>◈</span>
           <span className="brand-title">compexi</span>
-          <span className="brand-badge">Excel Copilot</span>
+          <span className="brand-badge">Data & Excel Copilot</span>
         </div>
 
         <div className="canvas-actions">
           {hasData && (
-            <div className="dataset-pill" title={fileInfo?.name ?? 'Excel cargado'}>
+            <div className="dataset-pill" title={fileInfo?.name ?? 'Dataset cargado'}>
               <i className="pixelart-icons-font-file" aria-hidden />
               <span>{fileInfo?.name ?? 'Archivo'} ({fileInfo?.rows ?? 0} filas)</span>
             </div>
           )}
-          <button
-            className="btn btn-secondary small btn-upload-excel"
-            onClick={() => inputRef.current?.click()}
-            type="button"
-            title="Cargar archivo Excel (.xlsx, .xls)"
-          >
-            <i className="pixelart-icons-font-upload" aria-hidden />
-            <span>{hasData ? 'Cambiar Excel' : 'Subir Excel'}</span>
-          </button>
           <input
             ref={inputRef}
             type="file"
-            accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+            accept=".xlsx,.xls,.csv,.tsv,text/csv,text/tab-separated-values,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
             hidden
             onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f) }}
           />
@@ -250,22 +239,12 @@ function DashboardContent() {
           </div>
 
           {/* Interactive Speech Bubble & Copilot Chat & MiniCharts */}
-          <ExcelChat />
+          <ExcelChat onOpenFilePicker={() => inputRef.current?.click()} />
 
           {error && (
             <div role="alert" className="hero-error">
               <i className="pixelart-icons-font-alert" aria-hidden />
               <span>{error}</span>
-            </div>
-          )}
-
-          {/* Prompt to upload when no data */}
-          {!hasData && !loading && (
-            <div className="hero-upload-strip">
-              <button className="btn btn-secondary small" onClick={() => inputRef.current?.click()} type="button">
-                <i className="pixelart-icons-font-folder" aria-hidden /> Seleccionar archivo .xlsx / .xls
-              </button>
-              <span className="hero-upload-hint">o arrastra tu hoja de cálculo directamente al lienzo</span>
             </div>
           )}
         </section>

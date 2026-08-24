@@ -78,7 +78,7 @@ function MiniChart({ config, data }: { config: { chartType: string; x: string; y
   )
 }
 
-export function ExcelChat() {
+export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void }) {
   const {
     rawRows, columns, addFilter, clearFilters, setActiveChart,
     byProduct, byCity, byCategory, metrics, filters, suggestedQuestions,
@@ -109,6 +109,7 @@ export function ExcelChat() {
     }
   }, [])
 
+  // Token-efficient compressed context
   const context = useMemo(() => {
     if (!hasData) return { hasData: false }
     return {
@@ -263,7 +264,7 @@ export function ExcelChat() {
             <div className="speech-bubble-avatar-title">
               <span className="dot-pulse" aria-hidden />
               <strong>compe</strong>
-              <span className="badge-expert">Excel AI</span>
+              <span className="badge-expert">Data & Excel AI</span>
             </div>
             <div className="speech-bubble-status">
               {ttsSpeaking && !muted && (
@@ -298,7 +299,7 @@ export function ExcelChat() {
                 <span className="skeleton-dot" />
                 <span className="skeleton-dot" />
                 <span className="skeleton-dot" />
-                <span>Analizando tus datos de Excel…</span>
+                <span>Analizando tus datos…</span>
               </div>
             ) : speechBubbleCleanText ? (
               <div className="speech-bubble-text">
@@ -308,15 +309,26 @@ export function ExcelChat() {
               </div>
             ) : (
               <div className="speech-bubble-welcome">
-                <p>¡Hola! Soy <strong>compe</strong>, tu analista y experto en Excel.</p>
-                <p className="subtext">
-                  {hasData
-                    ? `He cargado tu archivo con ${rawRows?.length ?? 0} filas. Pregúntame lo que quieras o pide fórmulas y gráficos.`
-                    : 'Arrastra un archivo Excel (.xlsx / .xls) o pregúntame cualquier fórmula o truco de Excel.'}
-                </p>
+                <p>¡Hola! Soy <strong>compe</strong>, tu analista de datos y experto en Excel.</p>
+                {hasData ? (
+                  <p className="subtext">
+                    He cargado <strong>{fileInfo?.name}</strong> con {rawRows?.length ?? 0} filas. Pregúntame lo que quieras o pide fórmulas y gráficos.
+                  </p>
+                ) : (
+                  <div className="welcome-dropzone" onClick={onOpenFilePicker} role="button" tabIndex={0}>
+                    <div className="dropzone-icon-ring">
+                      <i className="pixelart-icons-font-folder" aria-hidden />
+                    </div>
+                    <div className="dropzone-text">
+                      <strong className="dropzone-title">Arrastra y suelta tu archivo aquí</strong>
+                      <span className="dropzone-hint">Soporta Excel (<strong>.xlsx, .xls</strong>) o <strong>CSV / TSV</strong> · o haz clic para explorar</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
+            {/* Embedded contextual mini chart */}
             {hasData && activeMiniChart && speechBubbleCleanText && (
               <MiniChart config={activeMiniChart.config} data={activeMiniChart.data as any} />
             )}
@@ -343,6 +355,16 @@ export function ExcelChat() {
           >
             <i className="pixelart-icons-font-trash" aria-hidden /> Limpiar
           </button>
+          {onOpenFilePicker && (
+            <button
+              type="button"
+              className="btn btn-secondary small"
+              onClick={onOpenFilePicker}
+              title="Cargar otro archivo Excel o CSV"
+            >
+              <i className="pixelart-icons-font-upload" aria-hidden /> Cambiar archivo
+            </button>
+          )}
         </div>
       )}
 
@@ -380,11 +402,22 @@ export function ExcelChat() {
         )}
 
         <form className="copilot-dock-input" onSubmit={submit}>
+          {onOpenFilePicker && (
+            <button
+              type="button"
+              className="dock-attach-btn"
+              onClick={onOpenFilePicker}
+              title="Adjuntar archivo Excel o CSV (.xlsx, .xls, .csv, .tsv)"
+              aria-label="Subir archivo"
+            >
+              <i className="pixelart-icons-font-upload" aria-hidden />
+            </button>
+          )}
           <input
             className="copilot-text-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={hasData ? 'Pregunta sobre tus datos de Excel o pide fórmulas…' : 'Pregúntame cualquier fórmula o truco de Excel…'}
+            placeholder={hasData ? 'Pregunta sobre tus datos o pide fórmulas de Excel…' : 'Pregúntame cualquier fórmula o truco de Excel…'}
             aria-label="Escribe tu consulta"
             disabled={loading}
           />
