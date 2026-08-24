@@ -1,22 +1,9 @@
 import { useState } from 'react'
-import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core'
-import { CopilotChat } from '@copilotkit/react-ui'
+import { useFrontendTool, useAgentContext, CopilotChat } from '@copilotkit/react-core/v2'
+import { z } from 'zod'
 import { useDashboard } from '../../state/DashboardContext'
 import type { FilterOperator, ChartConfig } from '../../data/types'
 import type { MascotaMood } from '../../types/mascota'
-
-const COPILOT_INSTRUCTIONS = `You are Copixi AI Data Analyst. You have tools: setFilter, clearFilters, setChart, setDateRange, compareValues, showInsight, sortData, searchData, explainColumn, getTopCategories, removeFilter, ragQuery.
-
-RULES:
-- Always validate columns against the whitelist before calling any action.
-- Prefer actions over plain text when the user asks to change the dashboard.
-- When the user asks a question about the data, use explainColumn or getTopCategories to provide structured answers.
-- For vague or exploratory questions like "what do you see", "tell me about the data", "search for X", use ragQuery to retrieve relevant rows via semantic search.
-- Keep answers concise and cite numbers from context.
-- Never mention raw rows or suggest uploading data to a server. Data stays in the browser.
-- If asked for trends, reference timeSeries. If asked for anomalies, reference anomalies.
-- Suggest relevant actions proactively when the user asks vague questions like "what can you do" or "help".
-- For compareValues, use metric "sales" by default; if the user asks about units or customers, pass metric accordingly.`
 
 function setMascotaMood(mood: MascotaMood) {
   window.dispatchEvent(new CustomEvent('copixi:mascota-mood', { detail: mood }))
@@ -63,23 +50,27 @@ export function CopilotPanel() {
     topSimilarRows: topSimilarRows?.slice(0, 3).map((r) => ({ index: r.index, score: r.score.toFixed(3), snippet: r.snippet })) ?? [],
   }
 
-  useCopilotReadable({
+  // v2 useAgentContext requires JSON-serializable values (no `undefined`).
+  // Serialize once to guarantee a clean, serializable snapshot.
+  const serializableContext = JSON.parse(JSON.stringify(dashboardContext))
+
+  useAgentContext({
     description: 'Aggregated dashboard context. Never raw rows. Use for decisions.',
-    value: dashboardContext,
+    value: serializableContext,
   })
 
   const isValidOperator = (op: string): op is FilterOperator =>
     ['equals', 'contains', 'gt', 'lt', 'between'].includes(op)
 
-  useCopilotAction({
+  useFrontendTool({
     name: 'setFilter',
     description: 'Add a filter to the dashboard. Validates column exists via whitelist, operator, value. Example: setFilter city equals Bogotá',
-    parameters: [
-      { name: 'column', type: 'string', description: `Column name from: ${allowedColumns.join(', ') || 'no dataset loaded'}`, required: true },
-      { name: 'operator', type: 'string', description: 'Operator: equals, contains, gt, lt, between', required: true },
-      { name: 'value', type: 'string', description: 'Filter value', required: true },
-      { name: 'value2', type: 'string', description: 'Second value for between', required: false },
-    ],
+    parameters: z.object({
+      column: z.string().describe(`Column name from: ${allowedColumns.join(', ') || 'no dataset loaded'}`),
+      operator: z.string().describe('Operator: equals, contains, gt, lt, between'),
+      value: z.string().describe('Filter value'),
+      value2: z.string().optional().describe('Second value for between'),
+    }),
     handler: async ({ column, operator, value, value2 }) => {
       setMascotaMood('guino')
       setLastAction(`Applying filter: ${column} ${operator} ${value}${value2 ? ` → ${value2}` : ''}…`)
@@ -102,10 +93,10 @@ export function CopilotPanel() {
     },
   })
 
-  useCopilotAction({
+  useFrontendTool({
     name: 'clearFilters',
     description: 'Remove all filters from dashboard',
-    parameters: [],
+    parameters: z.object({}),
     handler: async () => {
       setMascotaMood('guino')
       setLastAction('Clearing filters…')
@@ -116,12 +107,12 @@ export function CopilotPanel() {
     },
   })
 
-  useCopilotAction({
+  useFrontendTool({
     name: 'removeFilter',
     description: 'Remove a single filter by column name. If multiple filters exist on the same column, removes the first match.',
-    parameters: [
-      { name: 'column', type: 'string', description: `Column name from: ${allowedColumns.join(', ') || 'no dataset loaded'}`, required: true },
-    ],
+    parameters: z.object({
+      column: z.string().describe(`Column name from: ${allowedColumns.join(', ') || 'no dataset loaded'}`),
+    }),
     handler: async ({ column }) => {
       setMascotaMood('guino')
       setLastAction(`Removing filter: ${column}…`)
@@ -144,14 +135,14 @@ export function CopilotPanel() {
     },
   })
 
-  useCopilotAction({
+  useFrontendTool({
     name: 'setChart',
     description: 'Change active chart type and axes. chartType: line|bar|area|pie, x and y must be existing columns.',
-    parameters: [
-      { name: 'chartType', type: 'string', description: 'line, bar, area, pie', required: true },
-      { name: 'x', type: 'string', description: `X axis column: ${allowedColumns.join(', ')}`, required: true },
-      { name: 'y', type: 'string', description: `Y axis column: ${allowedColumns.join(', ')}`, required: true },
-    ],
+    parameters: z.object({
+      chartType: z.string().describe('line, bar, area, pie'),
+      x: z.string().describe(`X axis column: ${allowedColumns.join(', ')}`),
+      y: z.string().describe(`Y axis column: ${allowedColumns.join(', ')}`),
+    }),
     handler: async ({ chartType, x, y }) => {
       setMascotaMood('guino')
       setLastAction(`Setting chart: ${chartType} ${x} vs ${y}…`)
@@ -175,13 +166,13 @@ export function CopilotPanel() {
     },
   })
 
-  useCopilotAction({
+  useFrontendTool({
     name: 'setDateRange',
     description: 'Filter by date range on the date column. Preserves existing non-date filters. from and to are YYYY-MM-DD strings.',
-    parameters: [
-      { name: 'from', type: 'string', description: 'Start date YYYY-MM-DD', required: true },
-      { name: 'to', type: 'string', description: 'End date YYYY-MM-DD', required: true },
-    ],
+    parameters: z.object({
+      from: z.string().describe('Start date YYYY-MM-DD'),
+      to: z.string().describe('End date YYYY-MM-DD'),
+    }),
     handler: async ({ from, to }) => {
       setMascotaMood('guino')
       setLastAction(`Applying date range ${from} → ${to}…`)
@@ -211,17 +202,17 @@ export function CopilotPanel() {
     },
   })
 
-  useCopilotAction({
+  useFrontendTool({
     name: 'compareValues',
     description: 'Compare values within a column by summing a metric. metric defaults to sales, can be units or customers.',
-    parameters: [
-      { name: 'column', type: 'string', description: `Column to compare: ${allowedColumns.join(', ')}`, required: true },
-      { name: 'values', type: 'string[]', description: 'Values to compare', required: true },
-      { name: 'metric', type: 'string', description: 'Metric to sum: sales, units, customers (default sales)', required: false },
-    ],
+    parameters: z.object({
+      column: z.string().describe(`Column to compare: ${allowedColumns.join(', ')}`),
+      values: z.array(z.string()).describe('Values to compare'),
+      metric: z.string().optional().describe('Metric to sum: sales, units, customers (default sales)'),
+    }),
     handler: async ({ column, values, metric }) => {
       setMascotaMood('guino')
-      setLastAction(`Comparing ${column}: ${Array.isArray(values) ? values.join(', ') : values}…`)
+      setLastAction(`Comparing ${column}: ${Array.isArray(values) ? values.join(', ') : String(values)}…`)
       if (!allowedColumns.includes(column)) {
         const msg = `Column "${column}" not found`
         if (import.meta.env.DEV) console.warn('[Copixi] AI compareValues rejected', { column, values, reason: msg })
@@ -252,12 +243,12 @@ export function CopilotPanel() {
     },
   })
 
-  useCopilotAction({
+  useFrontendTool({
     name: 'showInsight',
     description: 'Generate an insight message to display in the dashboard',
-    parameters: [
-      { name: 'insight', type: 'string', description: 'Insight text (max 600 chars)', required: true },
-    ],
+    parameters: z.object({
+      insight: z.string().describe('Insight text (max 600 chars)'),
+    }),
     handler: async ({ insight }) => {
       setMascotaMood('duda')
       if (!insight || String(insight).length > 600) {
@@ -273,13 +264,13 @@ export function CopilotPanel() {
     },
   })
 
-  useCopilotAction({
+  useFrontendTool({
     name: 'sortData',
     description: 'Sort the data table by a column. direction: asc or desc.',
-    parameters: [
-      { name: 'column', type: 'string', description: `Column to sort by: ${allowedColumns.join(', ')}`, required: true },
-      { name: 'direction', type: 'string', description: 'asc or desc', required: true },
-    ],
+    parameters: z.object({
+      column: z.string().describe(`Column to sort by: ${allowedColumns.join(', ')}`),
+      direction: z.string().describe('asc or desc'),
+    }),
     handler: async ({ column, direction }) => {
       setMascotaMood('guino')
       setLastAction(`Sorting table by ${column} ${direction}…`)
@@ -297,12 +288,12 @@ export function CopilotPanel() {
     },
   })
 
-  useCopilotAction({
+  useFrontendTool({
     name: 'searchData',
     description: 'Search all columns in the data table for a query string.',
-    parameters: [
-      { name: 'query', type: 'string', description: 'Search query', required: true },
-    ],
+    parameters: z.object({
+      query: z.string().describe('Search query'),
+    }),
     handler: async ({ query }) => {
       setMascotaMood('guino')
       setLastAction(`Searching for "${query}"…`)
@@ -313,12 +304,12 @@ export function CopilotPanel() {
     },
   })
 
-  useCopilotAction({
+  useFrontendTool({
     name: 'explainColumn',
     description: 'Explain a column: type, null %, distinct count, min/max, sample values.',
-    parameters: [
-      { name: 'column', type: 'string', description: `Column name from: ${allowedColumns.join(', ') || 'no dataset loaded'}`, required: true },
-    ],
+    parameters: z.object({
+      column: z.string().describe(`Column name from: ${allowedColumns.join(', ') || 'no dataset loaded'}`),
+    }),
     handler: async ({ column }) => {
       setMascotaMood('duda')
       setLastAction(`Explaining column ${column}…`)
@@ -342,13 +333,13 @@ export function CopilotPanel() {
     },
   })
 
-  useCopilotAction({
+  useFrontendTool({
     name: 'getTopCategories',
     description: 'Get top N values for a categorical column by sales. n is 3-10.',
-    parameters: [
-      { name: 'column', type: 'string', description: `Categorical column from: ${allowedColumns.join(', ') || 'no dataset loaded'}`, required: true },
-      { name: 'n', type: 'number', description: 'How many top values (3-10)', required: true },
-    ],
+    parameters: z.object({
+      column: z.string().describe(`Categorical column from: ${allowedColumns.join(', ') || 'no dataset loaded'}`),
+      n: z.number().describe('How many top values (3-10)'),
+    }),
     handler: async ({ column, n }) => {
       setMascotaMood('duda')
       setLastAction(`Getting top ${n} ${column}…`)
@@ -367,13 +358,13 @@ export function CopilotPanel() {
     },
   })
 
-  useCopilotAction({
+  useFrontendTool({
     name: 'ragQuery',
     description: 'Semantic search across dataset rows. Use this for vague questions like "what do you see", "find rows about X", "search for Y". Returns top-K matching rows as snippets.',
-    parameters: [
-      { name: 'query', type: 'string', description: 'Natural language search query', required: true },
-      { name: 'topK', type: 'number', description: 'Number of results (1-5, default 3)', required: false },
-    ],
+    parameters: z.object({
+      query: z.string().describe('Natural language search query'),
+      topK: z.number().optional().describe('Number of results (1-5, default 3)'),
+    }),
     handler: async ({ query, topK }) => {
       setMascotaMood('duda')
       setLastAction(`Searching semantically: "${query}"…`)
@@ -447,11 +438,10 @@ export function CopilotPanel() {
 
       <div className="copilot-chat-wrap">
         <CopilotChat
+          agentId="default"
           labels={{
-            title: 'Copixi Analyst',
-            initial: 'Hi! I can filter, compare, change charts, sort/search data, explain columns, and suggest insights. Try: "Show me sales from Bogotá" or "Explain the city column"',
+            welcomeMessageText: 'Hi! I can filter, compare, change charts, sort/search data, explain columns, and suggest insights. Try: "Show me sales from Bogotá" or "Explain the city column"',
           }}
-          instructions={COPILOT_INSTRUCTIONS}
         />
       </div>
 

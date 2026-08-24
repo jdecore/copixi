@@ -5,10 +5,12 @@
   "outputDirectory": "dist",
   "functions": {
     "api/gemini.ts": {
-      "includeFiles": "api/**"
+      "includeFiles": "api/**",
+      "maxDuration": 30
     },
     "api/copilotkit.ts": {
-      "includeFiles": "api/**"
+      "includeFiles": "api/**",
+      "maxDuration": 60
     }
   }
 }
