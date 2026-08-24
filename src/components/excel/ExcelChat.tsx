@@ -301,6 +301,28 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
                 <span className="skeleton-dot" />
                 <span>Analizando tus datos…</span>
               </div>
+            ) : error ? (
+              <div className="speech-bubble-error-box" role="alert">
+                <div className="error-badge-row">
+                  <i className="pixelart-icons-font-alert" aria-hidden />
+                  <strong>Error al procesar la respuesta:</strong>
+                </div>
+                <div className="error-message-text">
+                  {error.message || 'No se pudo conectar con el servicio de IA.'}
+                </div>
+                <div className="error-help-hint">
+                  {error.message?.includes('404') ? (
+                    <span>El endpoint <code>/api/chat</code> no está respondiendo en este entorno (si estás en <code>vite dev</code>, asegúrate de correr con Vercel CLI o configurar la API).</span>
+                  ) : error.message?.includes('500') || error.message?.includes('GEMINI_API_KEY') ? (
+                    <span>Falta configurar la variable de entorno <code>GEMINI_API_KEY</code> en tu servidor o Vercel.</span>
+                  ) : (
+                    <span>Verifica tu conexión y tu clave de Gemini API.</span>
+                  )}
+                </div>
+                <button type="button" className="btn btn-secondary small" onClick={() => regenerate()} style={{ marginTop: 8 }}>
+                  <i className="pixelart-icons-font-reload" aria-hidden /> Reintentar consulta
+                </button>
+              </div>
             ) : speechBubbleCleanText ? (
               <div className="speech-bubble-text">
                 {speechBubbleCleanText.split('\n').map((line, idx) => (
@@ -329,7 +351,7 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
             )}
 
             {/* Embedded contextual mini chart */}
-            {hasData && activeMiniChart && speechBubbleCleanText && (
+            {hasData && activeMiniChart && speechBubbleCleanText && !error && (
               <MiniChart config={activeMiniChart.config} data={activeMiniChart.data as any} />
             )}
           </div>
@@ -383,7 +405,10 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
           })}
           {error && (
             <div className="excel-chat-error" role="alert">
-              <span>No pude responder: {error.message || 'error de conexión'}.</span>
+              <div>
+                <strong>Error en la petición:</strong>
+                <p style={{ margin: '4px 0 0', fontSize: 12 }}>{error.message || 'Error de conexión con el servidor.'}</p>
+              </div>
               <button type="button" className="btn btn-secondary small" onClick={() => regenerate()}>Reintentar</button>
             </div>
           )}
