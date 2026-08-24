@@ -344,6 +344,46 @@
 .speech-bubble-welcome p {
   margin: 4px 0;
 }
+
+/* Rendered AI markdown (bold, italics, lists, inline code) */
+.speech-bubble-text p {
+  margin: 6px 0;
+  line-height: 1.5;
+}
+.speech-bubble-text p:first-child { margin-top: 0; }
+.speech-bubble-text p:last-child { margin-bottom: 0; }
+.speech-bubble-text .ai-list {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+.speech-bubble-text .ai-list li {
+  margin: 3px 0;
+  line-height: 1.45;
+}
+.speech-bubble-text .ai-inline-code {
+  background: #fff1e6;
+  border: 1px solid #ffd8b0;
+  color: #9a3412;
+  border-radius: 4px;
+  padding: 0 4px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9em;
+}
+
+/* Same treatment inside the expanded chat history */
+.excel-msg-ai .ai-list {
+  margin: 4px 0 4px 18px;
+  padding-left: 4px;
+}
+.excel-msg-ai .ai-inline-code {
+  background: #fff1e6;
+  border: 1px solid #ffd8b0;
+  color: #9a3412;
+  border-radius: 4px;
+  padding: 0 4px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9em;
+}
 .speech-bubble-welcome .subtext {
   font-size: 13px;
   color: var(--color-muted);

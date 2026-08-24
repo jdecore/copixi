@@ -42,9 +42,10 @@ export function Mascota({ mood = 'neutro', subtitulo = '', size, onClick }: Masc
       const cy = rect.top + rect.height * 0.35
       const dx = (e.clientX - cx) / (rect.width || 1)
       const dy = (e.clientY - cy) / (rect.height || 1)
-      el.style.setProperty('--mouse-x', `${Math.max(-12, Math.min(12, dx * 14))}px`)
-      el.style.setProperty('--mouse-y', `${Math.max(-8, Math.min(8, dy * 10))}px`)
-      el.style.setProperty('--head-rot', `${Math.max(-8, Math.min(8, dx * 7))}deg`)
+      // Keep pupil travel small so both pupils stay inside their eyes (synced).
+      el.style.setProperty('--mouse-x', `${Math.max(-3, Math.min(3, dx * 4))}px`)
+      el.style.setProperty('--mouse-y', `${Math.max(-2, Math.min(2, dy * 3))}px`)
+      el.style.setProperty('--head-rot', `${Math.max(-6, Math.min(6, dx * 6))}deg`)
     }
     window.addEventListener('mousemove', handler, { passive: true })
     return () => window.removeEventListener('mousemove', handler)

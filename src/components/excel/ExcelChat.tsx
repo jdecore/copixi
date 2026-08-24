@@ -36,6 +36,92 @@ function parseAction(text: string): ParsedAction | null {
   return null
 }
 
+// Strip the trailing JSON action block (e.g. {"action":"setFilter",...}) so it
+// isn't shown to the user.
+function cleanAI(text: string): string {
+  const idx = text.lastIndexOf('{')
+  if (idx !== -1 && text.slice(idx).includes('"action"')) {
+    const tail = text.slice(idx).trim()
+    if (tail.startsWith('{') && tail.endsWith('}')) return text.slice(0, idx).trim()
+  }
+  return text
+}
+
+// Minimal, dependency-free markdown: **bold**, *italic*, `code`.
+function renderInline(text: string): React.ReactNode[] {
+  const nodes: React.ReactNode[] = []
+  const re = /(\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`)/g
+  let last = 0
+  let m: RegExpExecArray | null
+  let key = 0
+  while ((m = re.exec(text))) {
+    if (m.index > last) nodes.push(text.slice(last, m.index))
+    if (m[2] !== undefined) nodes.push(<strong key={key++}>{m[2]}</strong>)
+    else if (m[3] !== undefined) nodes.push(<em key={key++}>{m[3]}</em>)
+    else if (m[4] !== undefined) nodes.push(<code key={key++} className="ai-inline-code">{m[4]}</code>)
+    last = m.index + m[0].length
+  }
+  if (last < text.length) nodes.push(text.slice(last))
+  return nodes
+}
+
+// Render AI text as paragraphs / lists with inline formatting.
+function renderRichText(text: string): React.ReactNode {
+  const lines = text.split('\n')
+  const blocks: React.ReactNode[] = []
+  let i = 0
+  let key = 0
+  while (i < lines.length) {
+    const line = lines[i]
+    if (!line.trim()) {
+      i++
+      continue
+    }
+    if (/^[-*+]\s+/.test(line)) {
+      const items: string[] = []
+      while (i < lines.length && /^[-*+]\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^[-*+]\s+/, ''))
+        i++
+      }
+      blocks.push(
+        <ul key={key++} className="ai-list">
+          {items.map((it, idx) => (
+            <li key={idx}>{renderInline(it)}</li>
+          ))}
+        </ul>,
+      )
+      continue
+    }
+    if (/^\d+\.\s+/.test(line)) {
+      const items: string[] = []
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\d+\.\s+/, ''))
+        i++
+      }
+      blocks.push(
+        <ol key={key++} className="ai-list">
+          {items.map((it, idx) => (
+            <li key={idx}>{renderInline(it)}</li>
+          ))}
+        </ol>,
+      )
+      continue
+    }
+    const para: string[] = []
+    while (
+      i < lines.length &&
+      lines[i].trim() &&
+      !/^[-*+]\s+/.test(lines[i]) &&
+      !/^\d+\.\s+/.test(lines[i])
+    ) {
+      para.push(lines[i])
+      i++
+    }
+    blocks.push(<p key={key++}>{renderInline(para.join(' '))}</p>)
+  }
+  return <>{blocks}</>
+}
+
 type ChatMsg = { id: string; role: 'user' | 'assistant'; content: string }
 
 function MiniChart({ config, data }: { config: { chartType: string; x: string; y: string; title?: string }; data: { name: string; value: number }[] }) {
@@ -315,14 +401,7 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
     return null
   }, [messages])
 
-  const speechBubbleCleanText = useMemo(() => {
-    if (!lastAiMessage) return null
-    const idx = lastAiMessage.lastIndexOf('{')
-    if (idx !== -1 && lastAiMessage.includes('"action"')) {
-      return lastAiMessage.slice(0, idx).trim()
-    }
-    return lastAiMessage
-  }, [lastAiMessage])
+  const cleanedAi = useMemo(() => (lastAiMessage ? cleanAI(lastAiMessage) : ''), [lastAiMessage])
 
   const activeMiniChart = useMemo(() => {
     if (autoCharts && autoCharts.length > 0 && hasData) {
@@ -406,11 +485,9 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
                   <i className="pixelart-icons-font-reload" aria-hidden /> Reintentar consulta
                 </button>
               </div>
-            ) : speechBubbleCleanText ? (
+            ) : cleanedAi ? (
               <div className="speech-bubble-text">
-                {speechBubbleCleanText.split('\n').map((line, idx) => (
-                  <p key={idx}>{line}</p>
-                ))}
+                {renderRichText(cleanedAi)}
               </div>
             ) : (
               <div className="speech-bubble-welcome">
@@ -447,7 +524,7 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
             )}
 
             {/* Embedded contextual mini chart */}
-            {hasData && activeMiniChart && speechBubbleCleanText && !error && (
+            {hasData && activeMiniChart && cleanedAi && !error && (
               <MiniChart config={activeMiniChart.config} data={activeMiniChart.data as any} />
             )}
           </div>
@@ -493,7 +570,7 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
             return (
               <div key={i} className={`excel-msg excel-msg-${m.role === 'user' ? 'user' : 'ai'}`}>
                 <div className="excel-msg-body">
-                  {m.content.split('\n').map((line, li) => (<span key={li}>{line}<br /></span>))}
+                  {renderRichText(cleanAI(m.content))}
                 </div>
               </div>
             )
