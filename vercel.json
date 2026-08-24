@@ -4,13 +4,9 @@
   "installCommand": "pnpm install",
   "outputDirectory": "dist",
   "functions": {
-    "api/gemini.ts": {
+    "api/chat.ts": {
       "includeFiles": "api/**",
       "maxDuration": 30
-    },
-    "api/copilotkit.ts": {
-      "includeFiles": "api/**",
-      "maxDuration": 60
     }
   }
 }

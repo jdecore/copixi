@@ -336,7 +336,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         currentFilters: filters,
         autoCharts: autoCharts.slice(0, 4).map((c) => ({ x: c.config.x, y: c.config.y, type: c.config.chartType })),
       }
-      const res = await fetch('/api/gemini', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode: 'summary', context: ctx }),

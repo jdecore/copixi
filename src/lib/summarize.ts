@@ -5,7 +5,7 @@
 
 export type SummaryPayload = {
   mode: 'summary'
-  // Aggregated context only — already minimal from CopilotPanel dashboardContext
+  // Aggregated context only — already minimal from the dashboard context
   context: {
     rowCount: number
     filteredCount: number
@@ -28,7 +28,7 @@ export type ExtractPayload = {
 }
 
 export async function callGeminiJson(body: SummaryPayload | ExtractPayload): Promise<{ text?: string; rows?: unknown; error?: string }> {
-  const res = await fetch('/api/gemini', {
+  const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

@@ -8,7 +8,7 @@ export function TrustBar() {
         <span className="badge">Vite + pnpm</span>
         <span className="badge">Radix UI</span>
         <span className="badge">Recharts</span>
-        <span className="badge">CopilotKit + Gemini</span>
+        <span className="badge">Gemini + Vercel</span>
         <span className="badge">Vercel</span>
       </div>
       <div style={{ fontSize: 11, color: 'var(--color-muted)', maxWidth: 360 }}>

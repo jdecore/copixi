@@ -1,53 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import './Mascota.css'
+import { speak } from '../../lib/tts'
+import type { MascotaMood } from '../../types/mascota'
 
-type Mood = 'neutro' | 'feliz' | 'enojado' | 'duda' | 'dormido' | 'guino' | 'hablando'
+type Mood = MascotaMood
 
 interface MascotaProps {
   mood?: Mood
   subtitulo?: string
+  size?: number
 }
 
-export function Mascota({ mood = 'neutro', subtitulo = '' }: MascotaProps) {
+export function Mascota({ mood = 'neutro', subtitulo = '', size }: MascotaProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   const [localMood, setLocalMood] = useState<Mood>(mood)
-  const speakQueueRef = useRef<string[]>([])
-  const speakingRef = useRef(false)
 
   useEffect(() => { setLocalMood(mood) }, [mood])
-
-  const getSpanishVoice = () => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return null
-    const voices = window.speechSynthesis.getVoices()
-    return voices.find((v) => v.lang.startsWith('es')) ?? voices.find((v) => v.lang.startsWith('en')) ?? null
-  }
-
-  const processQueue = () => {
-    if (speakingRef.current || speakQueueRef.current.length === 0) return
-    if (typeof window === 'undefined' || !window.speechSynthesis) return
-    speakingRef.current = true
-    const text = speakQueueRef.current.shift()!
-    const utterance = new SpeechSynthesisUtterance(text)
-    const voice = getSpanishVoice()
-    if (voice) utterance.voice = voice
-    utterance.rate = 1
-    utterance.pitch = 1.1
-    utterance.onend = () => {
-      speakingRef.current = false
-      processQueue()
-    }
-    utterance.onerror = () => {
-      speakingRef.current = false
-      processQueue()
-    }
-    window.speechSynthesis.speak(utterance)
-  }
-
-  const speak = (text: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return
-    speakQueueRef.current.push(text)
-    processQueue()
-  }
 
   useEffect(() => {
     const el = rootRef.current
@@ -66,16 +34,28 @@ export function Mascota({ mood = 'neutro', subtitulo = '' }: MascotaProps) {
   }, [])
 
   useEffect(() => {
-    const api = { setMood: (m: Mood) => setLocalMood(m), speak: (t: string) => speak(t) }
-    ;(window as any).setMood = (m: string) => api.setMood(m as Mood)
-    ;(window as any).mascotaSpeak = (t: string) => api.speak(t)
-    return () => { delete (window as any).setMood; delete (window as any).mascotaSpeak }
+    const api = {
+      setMood: (m: Mood) => setLocalMood(m),
+      speak: (t: string) => speak(t),
+    }
+    ;(window as unknown as Record<string, unknown>).setMood = (m: string) => api.setMood(m as Mood)
+    ;(window as unknown as Record<string, unknown>).mascotaSpeak = (t: string) => api.speak(t)
+    return () => {
+      delete (window as unknown as Record<string, unknown>).setMood
+      delete (window as unknown as Record<string, unknown>).mascotaSpeak
+    }
   }, [])
 
   const moodClass = `mood-${localMood}`
 
   return (
-    <div id="mascota" ref={rootRef} className={moodClass} aria-label={`Mascota estado: ${localMood}`}>
+    <div
+      id="mascota"
+      ref={rootRef}
+      className={moodClass}
+      style={size ? ({ ['--slime-size' as string]: `${size}px` } as React.CSSProperties) : undefined}
+      aria-label={`Mascota estado: ${localMood}`}
+    >
       <div className="slime">
         <div className="slime-body">
           <div className="slime-glow" aria-hidden />

@@ -1,1 +1,11 @@
-export type MascotaMood = 'neutro' | 'feliz' | 'enojado' | 'duda' | 'dormido' | 'guino' | 'hablando'
+export type MascotaMood =
+  | 'neutro'
+  | 'feliz'
+  | 'enojado'
+  | 'duda'
+  | 'dormido'
+  | 'guino'
+  | 'hablando'
+  | 'escuchando'
+  | 'pensando'
+  | 'exito'
