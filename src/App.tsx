@@ -12,6 +12,7 @@ import { DataTable } from './components/data/DataTable'
 import { DataProfiler } from './components/data/DataProfiler'
 import { Mascota } from './components/ui/Mascota'
 import { ExcelChat } from './components/excel/ExcelChat'
+import { speak } from './lib/tts'
 import type { SavedAnalysis } from './lib/storage'
 import { saveDataset } from './lib/storage'
 import type { MascotaMood } from './types/mascota'
@@ -235,6 +236,7 @@ function DashboardContent() {
             <Mascota
               mood={mascotaMood}
               size={180}
+              onClick={() => speak(hasData ? `Hola, tu archivo ${fileInfo?.name} está listo con ${fileInfo?.rows} filas. ¿Qué cálculo o gráfica deseas realizar?` : '¡Hola! Soy compe, tu robot analista. Arrastra tu archivo Excel o CSV para comenzar.')}
             />
           </div>
 

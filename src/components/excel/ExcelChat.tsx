@@ -331,7 +331,20 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
               </div>
             ) : (
               <div className="speech-bubble-welcome">
-                <p>¡Hola! Soy <strong>compe</strong>, tu analista de datos y experto en Excel.</p>
+                <div className="welcome-header-line">
+                  <p>¡Hola! Soy <strong>compe</strong>, tu analista de datos y experto en Excel.</p>
+                  {isTtsSupported() && (
+                    <button
+                      type="button"
+                      className="btn-hear-welcome"
+                      onClick={() => speak('¡Hola! Soy compe, tu analista de datos y experto en Excel. Arrastra tu archivo Excel o CSV para comenzar.')}
+                      title="Escuchar saludo"
+                      aria-label="Escuchar saludo"
+                    >
+                      <i className="pixelart-icons-font-volume" aria-hidden /> Escuchar
+                    </button>
+                  )}
+                </div>
                 {hasData ? (
                   <p className="subtext">
                     He cargado <strong>{fileInfo?.name}</strong> con {rawRows?.length ?? 0} filas. Pregúntame lo que quieras o pide fórmulas y gráficos.

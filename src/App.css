@@ -314,9 +314,33 @@
   font-weight: 600;
 }
 
-.speech-bubble-text p {
-  margin: 6px 0;
+.welcome-header-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
 }
+.btn-hear-welcome {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+.btn-hear-welcome:hover {
+  background: var(--color-primary);
+  color: white;
+  transform: scale(1.05);
+}
+
 .speech-bubble-welcome p {
   margin: 4px 0;
 }

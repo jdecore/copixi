@@ -33,13 +33,16 @@ function getClientIp(req: Request): string {
   return 'unknown'
 }
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite' || 'gemini-1.5-flash'
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
 const OPENROUTER_MODEL = 'openrouter/auto-beta'
 
 function getModel() {
-  const geminiKey = process.env.GEMINI_API_KEY
-  if (geminiKey) return createGoogle({ apiKey: geminiKey })(GEMINI_MODEL)
-  const orKey = process.env.OPENROUTER_API_KEY
+  const geminiKey = process.env.GEMINI_API_KEY?.trim()
+  if (geminiKey) {
+    const google = createGoogle({ apiKey: geminiKey })
+    return google(GEMINI_MODEL)
+  }
+  const orKey = process.env.OPENROUTER_API_KEY?.trim()
   if (orKey) {
     return createOpenAI({
       baseURL: 'https://openrouter.ai/api/v1',
