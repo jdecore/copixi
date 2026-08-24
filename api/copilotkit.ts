@@ -27,7 +27,11 @@ RULES:
 - Never mention raw rows or suggest uploading data to a server. Data stays in the browser.
 - If asked for trends, reference timeSeries. If asked for anomalies, reference anomalies.
 - Suggest relevant actions proactively when the user asks vague questions like "what can you do" or "help".
-- For compareValues, use metric "sales" by default; if the user asks about units or customers, pass metric accordingly.`
+- For compareValues, use metric "sales" by default; if the user asks about units or customers, pass metric accordingly.
+- When the user asks to visualize, chart, graph, show a trend, or "give me a chart", render an A2UI surface instead of plain text:
+  - Use the 'AreaChartCard' component for trends over time. Build 'data' as an array of { name, value } from 'timeSeries' (map each point's date to 'name' and value to 'value'), and set a 'title'.
+  - Use the 'BarChartCard' component for comparisons. Build 'data' from 'byCity', 'byCategory', or 'byProduct' (map each entry's name/value), and set a 'title'.
+  - These components render natively in the chat as Recharts charts. Never paste raw chart JSON as text when you can emit the surface.`
 
 // Rate-limit trivial per instance
 const RATE_LIMIT_WINDOW_MS = 60_000
