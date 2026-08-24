@@ -196,66 +196,99 @@ function DashboardContent() {
   }, [parseFile])
 
   return (
-    <>
+    <div className="canvas-wrapper">
       <a href="#main-content" className="skip-link">Skip to content</a>
-      <header className="header">
-        <div className="header-inner">
-          <div className="brand" aria-label="compexi home">
-            <span className="brand-mark" aria-hidden>◈</span>
-            <span>compexi</span>
-            <span className="brand-badge">Excel Expert</span>
-          </div>
-          <nav className="nav" aria-label="Main navigation" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <button className="btn btn-secondary small" onClick={() => inputRef.current?.click()} type="button">
-              <i className="pixelart-icons-font-upload" aria-hidden /> {hasData ? 'New dataset' : 'Upload'}
-            </button>
-          </nav>
-        </div>
-      </header>
 
-      <main className="main" id="main-content">
+      {/* Floating Minimal Controls Bar (No traditional navbar) */}
+      <div className="canvas-top-bar" role="navigation" aria-label="Controles rápidos">
+        <div className="canvas-brand" aria-label="compexi AI">
+          <span className="brand-mark" aria-hidden>◈</span>
+          <span className="brand-title">compexi</span>
+          <span className="brand-badge">Excel Copilot</span>
+        </div>
+
+        <div className="canvas-actions">
+          {hasData && (
+            <div className="dataset-pill" title={fileInfo?.name ?? 'Excel cargado'}>
+              <i className="pixelart-icons-font-file" aria-hidden />
+              <span>{fileInfo?.name ?? 'Archivo'} ({fileInfo?.rows ?? 0} filas)</span>
+            </div>
+          )}
+          <button
+            className="btn btn-secondary small btn-upload-excel"
+            onClick={() => inputRef.current?.click()}
+            type="button"
+            title="Cargar archivo Excel (.xlsx, .xls)"
+          >
+            <i className="pixelart-icons-font-upload" aria-hidden />
+            <span>{hasData ? 'Cambiar Excel' : 'Subir Excel'}</span>
+          </button>
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+            hidden
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f) }}
+          />
+        </div>
+      </div>
+
+      <main className="main-canvas" id="main-content">
         <section
-          className={`hero-excel ${dragging ? 'dropping' : ''}`}
-          aria-labelledby="excel-headline"
+          className={`hero-copilot ${dragging ? 'dropping' : ''}`}
+          aria-label="Escenario interactivo de compe"
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
         >
-          <Mascota
-            mood={mascotaMood}
-            subtitulo={
-              loading ? 'Procesando datos…' :
-              error ? 'Ups, algo falló' :
-              hasData ? `${fileInfo?.rows ?? 0} filas · ${fileInfo?.columns ?? 0} columnas` :
-              'Soy compe, tu analista IA.'
-            }
-            size={200}
-          />
-              <h2 id="excel-headline" className="sr-only">Chat con compe</h2>
+          {/* Top Stage: Animated Mascot */}
+          <div className="mascot-stage">
+            <Mascota
+              mood={mascotaMood}
+              size={180}
+            />
+          </div>
 
-          {!hasData && !loading && (
-            <div className="hero-upload">
-              <button className="btn btn-primary" onClick={() => inputRef.current?.click()} type="button">
-                <i className="pixelart-icons-font-upload" aria-hidden /> Subir CSV / Excel
-              </button>
-              <span className="hero-upload-hint">o arrastra un archivo aquí · también PDF / DOCX</span>
-              <input ref={inputRef} type="file" accept=".csv,.tsv,.xlsx,.xls,.pdf,.docx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f) }} />
-            </div>
-          )}
-
+          {/* Interactive Speech Bubble & Copilot Chat & MiniCharts */}
           <ExcelChat />
 
           {error && (
-            <div role="alert" className="hero-error">{error}</div>
+            <div role="alert" className="hero-error">
+              <i className="pixelart-icons-font-alert" aria-hidden />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Prompt to upload when no data */}
+          {!hasData && !loading && (
+            <div className="hero-upload-strip">
+              <button className="btn btn-secondary small" onClick={() => inputRef.current?.click()} type="button">
+                <i className="pixelart-icons-font-folder" aria-hidden /> Seleccionar archivo .xlsx / .xls
+              </button>
+              <span className="hero-upload-hint">o arrastra tu hoja de cálculo directamente al lienzo</span>
+            </div>
           )}
         </section>
 
+        {/* Optional Expandable Deep Analysis / Table / Recharts Dashboard */}
         {hasData && (
-          <section className="data-layer" aria-label="Análisis de datos">
+          <section className="data-layer" aria-label="Dashboard detallado de datos">
             <div className="data-layer-head">
-              <h3><i className="pixelart-icons-font-chart" aria-hidden /> Análisis del dataset</h3>
-              <button className="btn btn-secondary small" type="button" onClick={() => setDataOpen((o) => !o)} aria-expanded={dataOpen}>
-                {dataOpen ? <><i className="pixelart-icons-font-chevron-up" aria-hidden /> Ocultar</> : <><i className="pixelart-icons-font-chevron-down" aria-hidden /> Ver análisis</>}
+              <h3>
+                <i className="pixelart-icons-font-chart" aria-hidden />
+                <span>Explorador completo del Excel</span>
+              </h3>
+              <button
+                className="btn btn-secondary small"
+                type="button"
+                onClick={() => setDataOpen((o) => !o)}
+                aria-expanded={dataOpen}
+              >
+                {dataOpen ? (
+                  <><i className="pixelart-icons-font-chevron-up" aria-hidden /> Ocultar tabla y gráficos</>
+                ) : (
+                  <><i className="pixelart-icons-font-chevron-down" aria-hidden /> Ver tabla y gráficos completos ({autoCharts.length})</>
+                )}
               </button>
             </div>
             {dataOpen && (
@@ -263,10 +296,15 @@ function DashboardContent() {
                 <FilterBar />
                 <div className="charts-full">
                   {autoCharts.length === 0 ? (
-                    <div className="empty">No chartable columns detected. Ensure your file has at least one numeric or categorical column.</div>
+                    <div className="empty">No se detectaron columnas numéricas para gráficos adicionales.</div>
                   ) : (
                     autoCharts.map((c) => (
-                      <ChartCard key={`${c.config.chartType}|${c.config.x}|${c.config.y}`} title={c.config.title ?? `${c.config.y} by ${c.config.x}`} icon="pixelart-icons-font-chart" empty={c.data.length ? null : 'No data for this chart.'}>
+                      <ChartCard
+                        key={`${c.config.chartType}|${c.config.x}|${c.config.y}`}
+                        title={c.config.title ?? `${c.config.y} por ${c.config.x}`}
+                        icon="pixelart-icons-font-chart"
+                        empty={c.data.length ? null : 'Sin datos disponibles para esta gráfica.'}
+                      >
                         <ChartRenderer config={c.config} data={c.data as any} />
                       </ChartCard>
                     ))
@@ -282,8 +320,10 @@ function DashboardContent() {
         )}
       </main>
 
-      <footer className="footer" role="contentinfo">compexi — AI Data Analyst · Tus datos se quedan en tu navegador · React + Papa Parse + Recharts + Gemini vía Vercel Function · <a href="https://github.com/anomalyco/opencode" style={{ color: 'inherit', textDecoration: 'underline' }}>Feedback</a></footer>
-    </>
+      <footer className="canvas-footer" role="contentinfo">
+        <span>compexi · Copilot de Excel con IA · Tus datos se procesan localmente en tu navegador</span>
+      </footer>
+    </div>
   )
 }
 

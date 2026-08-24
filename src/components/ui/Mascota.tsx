@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import './Mascota.css'
-import { speak } from '../../lib/tts'
+import { speak, isSpeaking } from '../../lib/tts'
 import type { MascotaMood } from '../../types/mascota'
 
 type Mood = MascotaMood
@@ -9,13 +9,29 @@ interface MascotaProps {
   mood?: Mood
   subtitulo?: string
   size?: number
+  onClick?: () => void
 }
 
-export function Mascota({ mood = 'neutro', subtitulo = '', size }: MascotaProps) {
+export function Mascota({ mood = 'neutro', subtitulo = '', size, onClick }: MascotaProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   const [localMood, setLocalMood] = useState<Mood>(mood)
+  const [speakingState, setSpeakingState] = useState<boolean>(isSpeaking())
 
   useEffect(() => { setLocalMood(mood) }, [mood])
+
+  useEffect(() => {
+    const handleTts = (e: Event) => {
+      const detail = (e as CustomEvent<{ speaking: boolean }>).detail
+      if (detail) {
+        setSpeakingState(detail.speaking)
+        if (detail.speaking) {
+          setLocalMood('hablando')
+        }
+      }
+    }
+    window.addEventListener('copixi:tts-speaking', handleTts as EventListener)
+    return () => window.removeEventListener('copixi:tts-speaking', handleTts as EventListener)
+  }, [])
 
   useEffect(() => {
     const el = rootRef.current
@@ -46,15 +62,18 @@ export function Mascota({ mood = 'neutro', subtitulo = '', size }: MascotaProps)
     }
   }, [])
 
-  const moodClass = `mood-${localMood}`
+  const effectiveMood = speakingState ? 'hablando' : localMood
+  const moodClass = `mood-${effectiveMood}`
 
   return (
     <div
       id="mascota"
       ref={rootRef}
       className={moodClass}
+      onClick={onClick}
       style={size ? ({ ['--slime-size' as string]: `${size}px` } as React.CSSProperties) : undefined}
-      aria-label={`Mascota estado: ${localMood}`}
+      aria-label={`Mascota estado: ${effectiveMood}`}
+      role="img"
     >
       <div className="slime">
         <div className="slime-body">
@@ -67,7 +86,7 @@ export function Mascota({ mood = 'neutro', subtitulo = '', size }: MascotaProps)
         </div>
         <div className="slime-base" aria-hidden />
       </div>
-      <div id="subtitulos">{subtitulo}</div>
+      {subtitulo && <div id="subtitulos">{subtitulo}</div>}
     </div>
   )
 }

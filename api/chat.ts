@@ -33,7 +33,7 @@ function getClientIp(req: Request): string {
   return 'unknown'
 }
 
-const GEMINI_MODEL = 'gemini-1.5-flash'
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite' || 'gemini-1.5-flash'
 const OPENROUTER_MODEL = 'openrouter/auto-beta'
 
 function getModel() {
