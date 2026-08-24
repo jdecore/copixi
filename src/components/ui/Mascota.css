@@ -1,365 +1,372 @@
-/* compe — Slime pixel-art, tema-agnóstico, puro CSS */
+/* compe — Robot futurista Cyber-EVE con visor negro y ojos de neón naranja (WALL-E inspirado) */
 
-#mascota {
+#mascota.robot-eve {
   --mouse-x: 0px;
   --mouse-y: 0px;
-  width: var(--slime-size);
-  height: var(--slime-size);
+  --head-rot: 0deg;
+  width: var(--robot-size, 200px);
+  height: var(--robot-size, 200px);
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   filter: drop-shadow(0 0 0 transparent);
-  transition: filter 500ms ease;
+  transition: filter 400ms ease;
+  user-select: none;
 }
 
-#mascota .slime {
-  width: 84%;
-  aspect-ratio: 1 / 1.05;
+.robot-container {
+  width: 100%;
+  height: 100%;
   position: relative;
-  z-index: 2;
-  animation: flotar 5s ease-in-out infinite, respiracion 4s ease-in-out infinite;
-  image-rendering: pixelated;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: levitacionSuave 4.5s ease-in-out infinite;
 }
 
-#mascota .slime-body {
+/* ==================== CABEZA FLOTANTE ==================== */
+.robot-head {
+  width: 68%;
+  aspect-ratio: 1.25 / 1;
+  position: relative;
+  z-index: 10;
+  transform: rotate(var(--head-rot));
+  transition: transform 140ms ease-out;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.12));
+}
+
+.robot-head-shell {
   position: absolute;
   inset: 0;
-  background: var(--slime-skin);
-  border-radius: 42% 42% 38% 38% / 48% 48% 42% 42%;
+  background: linear-gradient(170deg, #ffffff 0%, #f8fafc 60%, #e2e8f0 100%);
+  border-radius: 50% 50% 46% 46% / 55% 55% 45% 45%;
+  border: 2px solid #e2e8f0;
   box-shadow:
-    inset -6px -8px 0 var(--slime-skin-dark),
-    inset 6px 8px 0 var(--slime-skin-light),
-    0 0 0 4px var(--slime-skin-dark);
+    inset -4px -6px 8px rgba(203, 213, 225, 0.6),
+    inset 4px 6px 8px rgba(255, 255, 255, 1),
+    0 4px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
 
-#mascota .slime-glow {
+.head-gloss {
   position: absolute;
-  top: 12%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 50%;
-  aspect-ratio: 1 / 1;
-  background: var(--slime-skin-light);
+  top: 6%;
+  left: 15%;
+  width: 70%;
+  height: 25%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 100%);
   border-radius: 50%;
-  opacity: 0.9;
-  box-shadow: 0 0 0 3px var(--slime-skin-dark);
-  animation: brillo 3.5s steps(3, end) infinite;
+  pointer-events: none;
 }
 
-#mascota .eye {
-  position: absolute;
-  top: 30%;
-  width: 26%;
-  aspect-ratio: 1 / 1.3;
-  background: var(--slime-eye);
-  border-radius: 50%;
+/* ==================== VISOR NEGRO BRILLANTE ==================== */
+.robot-visor {
+  width: 78%;
+  height: 64%;
+  background: radial-gradient(circle at 50% 40%, #171d2b 0%, #080c14 100%);
+  border-radius: 46% 46% 44% 44% / 52% 52% 46% 46%;
+  border: 2px solid #1e293b;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 12%;
+  box-shadow:
+    inset 0 4px 10px rgba(0, 0, 0, 0.8),
+    inset 0 -2px 6px rgba(255, 107, 0, 0.15),
+    0 0 12px rgba(0, 0, 0, 0.4);
   overflow: hidden;
-  transform-origin: center;
-  animation: parpadeo 3.8s steps(2, end) infinite;
-  box-shadow: inset 0 0 0 3px var(--slime-eye);
 }
 
-#mascota .eye.left { left: 16%; }
-#mascota .eye.right { right: 16%; animation-delay: 0.08s; }
-
-#mascota .pupil {
+.visor-glare {
   position: absolute;
-  inset: 18% 22%;
-  background: var(--slime-pupil);
+  top: 8%;
+  left: 12%;
+  width: 76%;
+  height: 30%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.02) 100%);
   border-radius: 50%;
+  pointer-events: none;
+}
+
+/* ==================== OJOS DE NEÓN ==================== */
+.neon-eye {
+  width: 32%;
+  aspect-ratio: 1 / 1.35;
+  background: var(--robot-neon, #ff6b00);
+  border-radius: 48%;
+  position: relative;
+  box-shadow:
+    0 0 8px var(--robot-neon-bright, #ff9100),
+    0 0 16px var(--robot-neon-glow, rgba(255, 107, 0, 0.8)),
+    inset 0 0 4px rgba(255, 255, 255, 0.8);
+  animation: parpadeoDigital 4.2s infinite;
+  transition: all 180ms ease-out;
+}
+
+.neon-pupil {
+  position: absolute;
+  inset: 20%;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #ffffff;
   transform: translate(var(--mouse-x), var(--mouse-y));
-  transition: transform 90ms steps(2, end);
-  box-shadow: 0 0 0 2px var(--slime-skin-dark);
+  transition: transform 80ms ease-out;
 }
 
-#mascota .mouth {
+/* Visor audio wave line (for speaking state) */
+.visor-audio-wave {
   position: absolute;
-  bottom: 22%;
+  bottom: 12%;
   left: 50%;
   transform: translateX(-50%);
-  width: 18%;
-  aspect-ratio: 1 / 0.55;
-  background: var(--slime-mouth);
-  border-radius: 0 0 50% 50% / 0 0 70% 70%;
-  transition: all 300ms steps(2, end);
+  display: none;
+  align-items: center;
+  gap: 3px;
+  height: 8px;
+}
+.visor-audio-wave .wave-bar {
+  width: 2px;
+  background: var(--robot-neon-bright, #ff9100);
+  border-radius: 1px;
+  box-shadow: 0 0 4px var(--robot-neon-glow);
+  animation: visorWave 600ms ease-in-out infinite alternate;
+}
+.visor-audio-wave .wave-bar:nth-child(1) { height: 4px; animation-delay: 0ms; }
+.visor-audio-wave .wave-bar:nth-child(2) { height: 7px; animation-delay: 100ms; }
+.visor-audio-wave .wave-bar:nth-child(3) { height: 5px; animation-delay: 200ms; }
+.visor-audio-wave .wave-bar:nth-child(4) { height: 8px; animation-delay: 150ms; }
+.visor-audio-wave .wave-bar:nth-child(5) { height: 4px; animation-delay: 250ms; }
+
+@keyframes visorWave {
+  0% { height: 2px; }
+  100% { height: 8px; }
 }
 
-#mascota .cheek {
+/* ==================== CUERPO FLOTANTE ==================== */
+.robot-body {
+  width: 52%;
+  aspect-ratio: 1 / 1.15;
+  margin-top: -8%;
+  position: relative;
+  z-index: 5;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.08));
+}
+
+.robot-body-shell {
   position: absolute;
-  top: 50%;
-  width: 16%;
+  inset: 0;
+  background: linear-gradient(175deg, #ffffff 0%, #f1f5f9 60%, #e2e8f0 100%);
+  border-radius: 46% 46% 50% 50% / 35% 35% 65% 65%;
+  border: 2px solid #e2e8f0;
+  box-shadow:
+    inset -4px -6px 8px rgba(203, 213, 225, 0.5),
+    inset 4px 6px 8px rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chest-core {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #090d16;
+  border: 2px solid #1e293b;
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.8);
+}
+.core-light {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--robot-neon, #ff6b00);
+  box-shadow: 0 0 8px var(--robot-neon-glow);
+  animation: corePulse 2.4s infinite ease-in-out;
+}
+@keyframes corePulse {
+  0%, 100% { opacity: 0.7; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 12px var(--robot-neon-glow); }
+}
+
+/* Arms */
+.robot-arm {
+  position: absolute;
+  top: 15%;
+  width: 14%;
+  height: 55%;
+  background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.06);
+  transition: transform 300ms ease;
+}
+.robot-arm.left {
+  left: -8%;
+  transform: rotate(8deg);
+}
+.robot-arm.right {
+  right: -8%;
+  transform: rotate(-8deg);
+}
+
+/* Base Shadow & Levitation Glow */
+.robot-thruster-glow {
+  position: absolute;
+  bottom: 6%;
+  width: 32%;
+  height: 8%;
+  background: radial-gradient(ellipse, var(--robot-neon-soft, rgba(255, 107, 0, 0.35)) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: thrusterPulse 1.8s infinite alternate;
+}
+@keyframes thrusterPulse {
+  0% { transform: scale(0.85); opacity: 0.5; }
+  100% { transform: scale(1.15); opacity: 0.9; }
+}
+
+.robot-shadow {
+  position: absolute;
+  bottom: 0;
+  width: 48%;
+  height: 10px;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.15) 0%, transparent 75%);
+  border-radius: 50%;
+  animation: shadowScale 4.5s ease-in-out infinite;
+}
+
+@keyframes levitacionSuave {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes shadowScale {
+  0%, 100% { transform: scale(1); opacity: 0.15; }
+  50% { transform: scale(0.85); opacity: 0.08; }
+}
+
+@keyframes parpadeoDigital {
+  0%, 45%, 49%, 100% { transform: scaleY(1); }
+  47% { transform: scaleY(0.08); }
+}
+
+/* ==================== ESTADOS / MOODS DE NEÓN ==================== */
+
+/* Hablando (TTS) */
+.mood-hablando .neon-eye {
+  animation: parpadeoHablando 0.6s infinite alternate;
+}
+.mood-hablando .visor-audio-wave {
+  display: flex;
+}
+.mood-hablando .robot-arm.left {
+  transform: rotate(14deg) translateY(-2px);
+}
+.mood-hablando .robot-arm.right {
+  transform: rotate(-14deg) translateY(-2px);
+}
+@keyframes parpadeoHablando {
+  0% { transform: scaleY(0.9); }
+  100% { transform: scaleY(1.15); }
+}
+
+/* Pensando */
+.mood-pensando .neon-eye {
+  border-radius: 50%;
   aspect-ratio: 1 / 1;
-  background: var(--slime-blush);
-  border-radius: 50%;
-  opacity: 0.7;
-  transition: opacity 300ms steps(2, end), transform 300ms steps(2, end);
-  box-shadow: 0 0 0 2px var(--slime-skin-dark);
+  width: 26%;
+  animation: scanningOrbit 1.2s infinite linear;
+  box-shadow: 0 0 12px var(--robot-neon-bright), 0 0 20px var(--robot-neon-glow);
+}
+.mood-pensando .neon-pupil {
+  display: none;
+}
+@keyframes scanningOrbit {
+  0% { transform: rotate(0deg) scale(0.9); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(0.9); }
 }
 
-#mascota .cheek.left { left: 6%; }
-#mascota .cheek.right { right: 6%; }
-
-#mascota .slime-base {
-  width: 66%;
-  height: 16%;
-  background: var(--slime-skin-dark);
-  border-radius: 50%;
-  margin-top: -10%;
-  z-index: 1;
-  opacity: 0.95;
-  box-shadow: 0 0 0 3px var(--slime-eye);
+/* Feliz / Éxito */
+.mood-feliz .neon-eye,
+.mood-exito .neon-eye {
+  aspect-ratio: 1 / 0.7;
+  border-radius: 50% 50% 0 0;
+  box-shadow:
+    0 0 12px var(--robot-neon-bright),
+    0 0 24px var(--robot-neon-glow);
+  transform: translateY(-2px);
+}
+.mood-feliz .neon-pupil,
+.mood-exito .neon-pupil {
+  display: none;
+}
+.mood-exito .robot-arm.left {
+  transform: rotate(-24deg) translateY(-8px);
+}
+.mood-exito .robot-arm.right {
+  transform: rotate(24deg) translateY(-8px);
 }
 
+/* Duda / Inclinado */
+.mood-duda .robot-head {
+  transform: rotate(6deg);
+}
+.mood-duda .neon-eye.left {
+  transform: scale(0.85);
+}
+.mood-duda .neon-eye.right {
+  transform: scale(1.1);
+}
+
+/* Enojado / Error */
+.mood-enojado .neon-eye {
+  background: #ff2a2a;
+  box-shadow: 0 0 12px #ff2a2a, 0 0 20px rgba(255, 42, 42, 0.8);
+  border-radius: 40% 10% 50% 50%;
+  transform: rotate(12deg);
+}
+.mood-enojado .neon-eye.right {
+  border-radius: 10% 40% 50% 50%;
+  transform: rotate(-12deg);
+}
+.mood-enojado .core-light {
+  background: #ff2a2a;
+  box-shadow: 0 0 8px #ff2a2a;
+}
+
+/* Escuchando */
+.mood-escuchando .neon-eye {
+  transform: scale(1.12);
+  box-shadow: 0 0 14px var(--robot-neon-bright), 0 0 22px var(--robot-neon-glow);
+}
+
+/* Subtítulos debajo del robot si aplican */
 #subtitulos {
-  margin-top: 14px;
-  font-size: 13px;
+  margin-top: 10px;
+  font-size: 12px;
   color: var(--color-muted, #64748b);
   text-align: center;
   font-weight: 700;
   letter-spacing: 0.04em;
-  transition: color 300ms steps(2, end);
-  text-shadow: 2px 2px 0 var(--color-surface);
+  transition: color 250ms ease;
 }
 
-/* ===================== ANIMACIONES BASE PIXEL ===================== */
-
-@keyframes parpadeo {
-  0%, 42%, 46%, 100% { transform: scaleY(1); }
-  44% { transform: scaleY(0.08); }
-}
-
-@keyframes respiracion {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.04); }
-}
-
-@keyframes flotar {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-@keyframes brillo {
-  0%, 100% { opacity: 0.8; transform: translateX(-50%) scale(1); }
-  50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
-}
-
-/* ===================== ESTADOS / MOODS PIXEL ===================== */
-
-.mood-feliz .eye {
-  width: 30%;
-  top: 28%;
-  border-radius: 50%;
-}
-.mood-feliz .pupil {
-  inset: 14% 18%;
-  box-shadow: 0 0 0 3px var(--slime-skin-dark);
-}
-.mood-feliz .mouth {
-  width: 26%;
-  height: 14%;
-  border-radius: 0 0 50% 50% / 0 0 70% 70%;
-}
-.mood-feliz .cheek {
-  opacity: 1;
-  transform: scale(1.15);
-  box-shadow: 0 0 0 3px var(--slime-skin-dark);
-}
-
-.mood-enojado .eye {
-  width: 24%;
-  top: 32%;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 3px var(--slime-eye);
-}
-.mood-enojado .pupil {
-  inset: 24% 28%;
-  box-shadow: 0 0 0 3px var(--slime-skin-dark);
-}
-.mood-enojado .mouth {
-  width: 22%;
-  height: 10%;
-  border-radius: 50%;
-  bottom: 24%;
-  box-shadow: 0 0 0 2px var(--slime-mouth);
-}
-.mood-enojado .cheek {
-  opacity: 0.3;
-  box-shadow: 0 0 0 2px var(--slime-skin-dark);
-}
-
-.mood-duda .eye.left {
-  width: 18%;
-  top: 34%;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 2px var(--slime-eye);
-}
-.mood-duda .eye.right {
-  width: 28%;
-  top: 30%;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 3px var(--slime-eye);
-}
-.mood-duda .pupil {
-  inset: 18% 22%;
-  box-shadow: 0 0 0 2px var(--slime-skin-dark);
-}
-.mood-duda .mouth {
-  width: 14%;
-  height: 18%;
-  border-radius: 50%;
-  bottom: 26%;
-  box-shadow: 0 0 0 2px var(--slime-mouth);
-}
-.mood-duda .cheek.left {
-  opacity: 0.5;
-  box-shadow: 0 0 0 2px var(--slime-skin-dark);
-}
-
-.mood-dormido .eye {
-  height: 5px !important;
-  top: 40% !important;
-  border-radius: 999px !important;
-  background: var(--slime-eye) !important;
-  box-shadow: 0 0 0 2px var(--slime-eye) !important;
-  animation: none !important;
-}
-.mood-dormido .pupil {
-  display: none;
-}
-.mood-dormido .mouth {
-  width: 12%;
-  height: 8%;
-  border-radius: 50%;
-  bottom: 28%;
-  box-shadow: 0 0 0 2px var(--slime-mouth);
-}
-.mood-dormido .cheek {
-  opacity: 0.15;
-  box-shadow: none;
-}
-
-.mood-guino .eye.right {
-  height: 5px !important;
-  top: 40% !important;
-  border-radius: 999px !important;
-  animation: none !important;
-  background: var(--slime-eye) !important;
-  box-shadow: 0 0 0 2px var(--slime-eye) !important;
-}
-.mood-guino .eye.right .pupil {
-  display: none;
-}
-.mood-guino .eye.left {
-  width: 30%;
-  top: 28%;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 3px var(--slime-eye);
-}
-.mood-guino .pupil {
-  inset: 12% 16%;
-  box-shadow: 0 0 0 3px var(--slime-skin-dark);
-}
-.mood-guino .mouth {
-  width: 20%;
-  height: 12%;
-  border-radius: 0 0 50% 50% / 0 0 70% 70%;
-  transform: translateX(-50%) rotate(-8deg);
-  box-shadow: 0 0 0 2px var(--slime-mouth);
-}
-
-.mood-hablando .mouth {
-  width: 22%;
-  height: 14%;
-  border-radius: 50%;
-  bottom: 24%;
-  animation: hablar 0.6s steps(2, end) infinite;
-}
-
-@keyframes hablar {
-  0%, 100% { transform: translateX(-50%) scaleY(1); }
-  50% { transform: translateX(-50%) scaleY(0.5); }
-}
-
-.mood-escuchando .eye {
-  animation: none !important;
-}
-.mood-escuchando .slime {
-  animation: flotar 5s ease-in-out infinite, escuchar 0.9s steps(2, end) infinite;
-}
-.mood-escuchando .pupil {
-  inset: 16% 20%;
-}
-
-.mood-pensando .eye.left {
-  width: 18%;
-  top: 34%;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 2px var(--slime-eye);
-}
-.mood-pensando .eye.right {
-  width: 28%;
-  top: 30%;
-  box-shadow: inset 0 0 0 3px var(--slime-eye);
-}
-.mood-pensando .mouth {
-  width: 14%;
-  height: 10%;
-  border-radius: 999px;
-  bottom: 26%;
-  box-shadow: 0 0 0 2px var(--slime-mouth);
-}
-.mood-pensando .slime-glow {
-  animation: pensar-glow 1.1s ease-in-out infinite;
-}
-.mood-pensando .cheek {
-  opacity: 0.6;
-}
-
-.mood-exito .eye {
-  width: 30%;
-  top: 28%;
-  border-radius: 50%;
-}
-.mood-exito .pupil {
-  inset: 14% 18%;
-  box-shadow: 0 0 0 3px var(--slime-skin-dark);
-}
-.mood-exito .mouth {
-  width: 26%;
-  height: 14%;
-  border-radius: 0 0 50% 50% / 0 0 70% 70%;
-}
-.mood-exito .cheek {
-  opacity: 1;
-  transform: scale(1.2);
-  box-shadow: 0 0 0 3px var(--slime-skin-dark);
-}
-.mood-exito .slime-glow {
-  animation: brillo 1.6s steps(3, end) infinite;
-  box-shadow: 0 0 0 4px var(--slime-skin-dark), 0 0 24px var(--slime-glow);
-}
-
-@keyframes escuchar {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
-}
-
-@keyframes pensar-glow {
-  0%, 100% { opacity: 0.8; transform: translateX(-50%) scale(1); box-shadow: 0 0 0 3px var(--slime-skin-dark); }
-  50% { opacity: 1; transform: translateX(-50%) scale(1.12); box-shadow: 0 0 0 5px var(--slime-skin-dark), 0 0 18px var(--slime-glow); }
-}
-
-/* Reduced motion */
+/* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
-  #mascota .slime,
-  #mascota .slime-glow,
-  #mascota .eye {
+  .robot-container,
+  .robot-shadow,
+  .neon-eye,
+  .core-light,
+  .robot-thruster-glow {
     animation: none !important;
-  }
-  #mascota .pupil {
-    transition: none !important;
   }
 }

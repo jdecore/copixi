@@ -48,18 +48,18 @@
   --transition-fast: 120ms ease;
   --transition-normal: 200ms ease;
 
-  /* mascota / slime tokens — orange palette */
-  --slime-bg: #fff7ed;
-  --slime-accent: #ff6b00;
-  --slime-size: min(260px, 55vw);
-  --slime-skin: #ff8c2f;
-  --slime-skin-light: #ffb86a;
-  --slime-skin-dark: #c2410c;
-  --slime-glow: rgba(255, 107, 0, 0.25);
-  --slime-eye: #0f172a;
-  --slime-pupil: #ffffff;
-  --slime-blush: rgba(255, 138, 76, 0.6);
-  --slime-mouth: #1e293b;
+  /* robot Cyber-EVE tokens — white body + glossy black visor + orange/amber neon eyes */
+  --robot-size: min(240px, 50vw);
+  --robot-shell: #ffffff;
+  --robot-shell-light: #f8fafc;
+  --robot-shell-shadow: #cbd5e1;
+  --robot-visor: #090d16;
+  --robot-visor-border: #1e293b;
+  --robot-neon: #ff6b00;
+  --robot-neon-bright: #ff9100;
+  --robot-neon-glow: rgba(255, 107, 0, 0.7);
+  --robot-neon-soft: rgba(255, 107, 0, 0.25);
+  --robot-accent: #ff8c2f;
 
   color-scheme: light;
   font-family: var(--font-sans);
