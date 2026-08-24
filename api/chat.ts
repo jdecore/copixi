@@ -30,9 +30,13 @@ function isRateLimited(ip: string): boolean {
   return recent.length > RATE_LIMIT_MAX
 }
 
-function getClientIp(req: Request): string {
-  const fwd = req.headers.get('x-forwarded-for')
-  if (fwd) return fwd.split(',')[0]?.trim() ?? 'unknown'
+function getClientIp(req: any): string {
+  const h = req?.headers
+  if (!h) return 'unknown'
+  let fwd: string | undefined
+  if (typeof h.get === 'function') fwd = h.get('x-forwarded-for')
+  else if (typeof h['x-forwarded-for'] === 'string') fwd = h['x-forwarded-for']
+  if (typeof fwd === 'string' && fwd) return fwd.split(',')[0].trim() || 'unknown'
   return 'unknown'
 }
 
@@ -131,14 +135,7 @@ async function generate(prompt: string, system: string): Promise<string> {
 
 // ---- SSE helpers (plain string response, Vercel-safe) ----
 
-function sseError(message: string): Response {
-  return new Response(JSON.stringify({ error: 'AI provider error', detail: message.slice(0, 500) }), {
-    status: 502,
-    headers: { 'content-type': 'application/json' },
-  })
-}
-
-function sseChatText(text: string): Response {
+function sseChatText(text: string): string {
   const id = `msg-${Date.now()}`
   const chunks = [
     `data: ${JSON.stringify({ type: 'start', messageId: id })}`,
@@ -147,14 +144,7 @@ function sseChatText(text: string): Response {
     `data: ${JSON.stringify({ type: 'text-end', id })}`,
     `data: ${JSON.stringify({ type: 'finish', finishReason: 'stop' })}`,
   ].join('\n\n') + '\n\n'
-  return new Response(chunks, {
-    status: 200,
-    headers: {
-      'content-type': 'text/event-stream',
-      'cache-control': 'no-cache, no-transform',
-      connection: 'close',
-    },
-  })
+  return chunks
 }
 
 function messageText(m: any): string {
@@ -163,32 +153,75 @@ function messageText(m: any): string {
   return ''
 }
 
+// ---- Runtime-agnostic request/response helpers ----
+// Vercel may invoke this function either with the modern Web API
+// (req: Request -> req.json(), return new Response()) or with the legacy
+// Node signature (req: IncomingMessage, res: ServerResponse where headers is a
+// plain object and there is no req.json). These helpers cover both so the
+// function works on any Vercel runtime.
+
+function readBody(req: any): Promise<any> {
+  if (req && typeof req.json === 'function') return req.json()
+  return new Promise((resolve, reject) => {
+    let data = ''
+    req.on('data', (chunk: any) => { data += chunk })
+    req.on('end', () => {
+      try { resolve(data ? JSON.parse(data) : {}) } catch (e) { reject(e) }
+    })
+    req.on('error', reject)
+  })
+}
+
+function makeResponder(res: any) {
+  const isNode = typeof res !== 'undefined' && typeof res.setHeader === 'function'
+  return {
+    json(status: number, data: any) {
+      const body = JSON.stringify(data)
+      if (isNode) {
+        res.statusCode = status
+        res.setHeader('content-type', 'application/json')
+        res.end(body)
+        return
+      }
+      return new Response(body, { status, headers: { 'content-type': 'application/json' } })
+    },
+    sse(sseText: string) {
+      const headers: Record<string, string> = {
+        'content-type': 'text/event-stream',
+        'cache-control': 'no-cache, no-transform',
+        connection: 'close',
+      }
+      if (isNode) {
+        res.statusCode = 200
+        for (const [k, v] of Object.entries(headers)) res.setHeader(k, v)
+        res.end(sseText)
+        return
+      }
+      return new Response(sseText, { status: 200, headers })
+    },
+  }
+}
+
 // ---- Handler ----
 
-export default async function handler(req: Request) {
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed. Use POST.' }), {
-      status: 405,
-      headers: { 'content-type': 'application/json' },
-    })
+export default async function handler(req: any, res?: any): Promise<Response | void> {
+  const respond = makeResponder(res)
+
+  const method = req?.method || 'GET'
+  if (method !== 'POST') {
+    return respond.json(405, { error: 'Method not allowed. Use POST.' })
   }
 
   const ip = getClientIp(req)
   if (isRateLimited(ip)) {
-    return new Response(JSON.stringify({ error: 'Rate limit exceeded. Try again later.' }), {
-      status: 429,
-      headers: { 'content-type': 'application/json' },
-    })
+    return respond.json(429, { error: 'Rate limit exceeded. Try again later.' })
   }
 
   let body: Record<string, unknown>
   try {
-    body = (await req.json()) as Record<string, unknown>
+    body = (await readBody(req)) as Record<string, unknown>
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-      status: 400,
-      headers: { 'content-type': 'application/json' },
-    })
+    return respond.json(400, { error: 'Invalid JSON body' })
   }
 
   const mode = typeof body.mode === 'string' ? body.mode : undefined
@@ -198,37 +231,25 @@ export default async function handler(req: Request) {
       if (mode === 'summary') {
         const ctx = body.context
         if (!ctx || typeof ctx !== 'object') {
-          return new Response(JSON.stringify({ error: 'summary requires context object' }), {
-            status: 400,
-            headers: { 'content-type': 'application/json' },
-          })
+          return respond.json(400, { error: 'summary requires context object' })
         }
         const ctxStr = JSON.stringify(ctx)
         if (ctxStr.length > 8000) {
-          return new Response(JSON.stringify({ error: 'context too large (max 8000 chars)' }), {
-            status: 400,
-            headers: { 'content-type': 'application/json' },
-          })
+          return respond.json(400, { error: 'context too large (max 8000 chars)' })
         }
         const prompt = `Genera un resumen en español en 3-5 bullets concisos + 1 insight accionable sobre este dataset. Cita números reales del contexto. No inventes columnas. Texto plano, sin JSON.\n\nContexto: ${ctxStr}`
         const text = (await generate(prompt, EXCEL_SYSTEM)).trim()
-        if (!text) return new Response(JSON.stringify({ error: 'Empty summary' }), { status: 200, headers: { 'content-type': 'application/json' } })
-        return new Response(JSON.stringify({ text }), { status: 200, headers: { 'content-type': 'application/json' } })
+        if (!text) return respond.json(200, { error: 'Empty summary' })
+        return respond.json(200, { text })
       }
 
       const text = typeof body.text === 'string' ? body.text : ''
       const filename = String(body.filename ?? 'document')
       if (!text.trim()) {
-        return new Response(JSON.stringify({ error: 'extract requires text string' }), {
-          status: 400,
-          headers: { 'content-type': 'application/json' },
-        })
+        return respond.json(400, { error: 'extract requires text string' })
       }
       if (text.length > 8000) {
-        return new Response(JSON.stringify({ error: 'text too large (max 8000 chars, send truncated)' }), {
-          status: 400,
-          headers: { 'content-type': 'application/json' },
-        })
+        return respond.json(400, { error: 'text too large (max 8000 chars, send truncated)' })
       }
       const prompt = `Extrae datos tabulares de este documento "${filename}". Texto (truncado):\n"""${text}"""\n\nInstrucciones: Si hay tabla, retorna JSON array de objetos con keys = columnas normalizadas (lowercase, sin espacios). Valores string o number. Si no hay tabla pero hay datos estructurados, inventa columnas razonables y extrae hasta 30 filas. Si no hay datos tabulares, retorna []. Responde SOLO con el JSON array, sin markdown ni explicación.`
       const raw = await generate(prompt, EXCEL_SYSTEM)
@@ -241,25 +262,19 @@ export default async function handler(req: Request) {
         rows = null
       }
       if (!rows) {
-        return new Response(JSON.stringify({ text: raw, rows: null, error: 'No valid JSON array extracted' }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        })
+        return respond.json(200, { text: raw, rows: null, error: 'No valid JSON array extracted' })
       }
-      return new Response(JSON.stringify({ rows }), { status: 200, headers: { 'content-type': 'application/json' } })
+      return respond.json(200, { rows })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
-      return sseError(message)
+      return respond.json(502, { error: 'AI provider error', detail: message.slice(0, 500) })
     }
   }
 
   // Chat mode
   const messages = Array.isArray(body.messages) ? (body.messages as any[]) : null
   if (!messages || messages.length === 0) {
-    return new Response(JSON.stringify({ error: 'Invalid request: expected messages array.' }), {
-      status: 400,
-      headers: { 'content-type': 'application/json' },
-    })
+    return respond.json(400, { error: 'Invalid request: expected messages array.' })
   }
 
   const contextBlock = buildContextBlock(body.context)
@@ -270,9 +285,9 @@ export default async function handler(req: Request) {
 
   try {
     const text = await generate(prompt, EXCEL_SYSTEM)
-    return sseChatText(text)
+    return respond.sse(sseChatText(text))
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
-    return sseError(message)
+    return respond.json(502, { error: 'AI provider error', detail: message.slice(0, 500) })
   }
 }
