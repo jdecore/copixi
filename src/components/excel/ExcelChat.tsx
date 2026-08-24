@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useChat } from '@ai-sdk/react'
-import { DefaultChatTransport } from 'ai'
 import { ResponsiveContainer, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 import { useDashboard } from '../../state/DashboardContext'
 import { speak, getMuted, setMuted as setTtsMuted, isTtsSupported, cancel as cancelTts, isSpeaking } from '../../lib/tts'
@@ -37,6 +35,8 @@ function parseAction(text: string): ParsedAction | null {
   }
   return null
 }
+
+type ChatMsg = { id: string; role: 'user' | 'assistant'; content: string }
 
 function MiniChart({ config, data }: { config: { chartType: string; x: string; y: string; title?: string }; data: { name: string; value: number }[] }) {
   if (!data || data.length === 0) return null
@@ -92,6 +92,13 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
   const [chatLogOpen, setChatLogOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  // Chat state (self-contained, no external chat SDK)
+  const [messages, setMessages] = useState<ChatMsg[]>([])
+  const [status, setStatus] = useState<'idle' | 'submitted' | 'streaming' | 'done' | 'error'>('idle')
+  const [error, setError] = useState<string | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
+  const lastQueryRef = useRef('')
+
   useEffect(() => {
     const handleTts = (e: Event) => {
       const detail = (e as CustomEvent<{ speaking: boolean }>).detail
@@ -108,6 +115,16 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
       window.removeEventListener('copixi:tts-muted-change', handleMuteChange as EventListener)
     }
   }, [])
+
+  const loading = status === 'submitted' || status === 'streaming'
+
+  useEffect(() => {
+    if (loading) setMascotaMood('pensando')
+  }, [loading])
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
+  }, [messages, loading])
 
   // Token-efficient compressed context
   const context = useMemo(() => {
@@ -132,39 +149,6 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
 
   const contextRef = useRef(context)
   useEffect(() => { contextRef.current = context }, [context])
-
-  const { messages, sendMessage, status, error, stop, regenerate, setMessages } = useChat({
-    transport: new DefaultChatTransport({
-      api: '/api/chat',
-      prepareSendMessagesRequest: ({ messages }) => {
-        const windowed = messages.slice(-4)
-        return { body: { messages: windowed, context: contextRef.current } }
-      },
-    }),
-    onFinish: ({ message }) => {
-      const text = message.parts
-        .filter((p) => p.type === 'text')
-        .map((p) => (p as { text?: string }).text ?? '')
-        .join('')
-      if (!getMuted() && text) speak(text.slice(0, 300))
-      setMascotaMood('exito')
-      const action = parseAction(text)
-      if (action) dispatchAction(action)
-    },
-    onError: () => {
-      setMascotaMood('enojado')
-    },
-  })
-
-  const loading = status === 'submitted' || status === 'streaming'
-
-  useEffect(() => {
-    if (loading) setMascotaMood('pensando')
-  }, [loading])
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-  }, [messages, loading])
 
   const allowedColumns = useMemo(() => columns.map((c) => c.name), [columns])
 
@@ -199,18 +183,123 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
     }
   }
 
+  async function runQuery(text: string) {
+    if (loading) return
+    const trimmed = text.trim()
+    if (!trimmed) return
+    lastQueryRef.current = trimmed
+    setError(null)
+
+    const userMsg: ChatMsg = { id: `u-${Date.now()}`, role: 'user', content: trimmed }
+    const assistantMsg: ChatMsg = { id: `a-${Date.now()}`, role: 'assistant', content: '' }
+    const history = [...messages, userMsg].slice(-4).map((m) => ({ role: m.role, content: m.content }))
+
+    setMessages((prev) => [...prev, userMsg, assistantMsg])
+    setMascotaMood('escuchando')
+    setStatus('submitted')
+
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ messages: history, context: contextRef.current }),
+        signal: controller.signal,
+      })
+
+      if (!res.ok || !res.body) {
+        let detail = `HTTP ${res.status}`
+        try {
+          const j = (await res.json()) as { error?: string; detail?: string }
+          if (j?.error) detail = j.detail ? `${j.error}: ${j.detail}` : j.error
+        } catch { /* ignore */ }
+        throw new Error(detail)
+      }
+
+      setStatus('streaming')
+      setMascotaMood('pensando')
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let acc = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        let sep: number
+        while ((sep = buffer.indexOf('\n\n')) !== -1) {
+          const raw = buffer.slice(0, sep)
+          buffer = buffer.slice(sep + 2)
+          const line = raw.trim()
+          if (!line.startsWith('data:')) continue
+          const payload = line.slice(5).trim()
+          if (!payload) continue
+          try {
+            const evt = JSON.parse(payload) as { type: string; delta?: string; message?: string }
+            if (evt.type === 'text-delta' && typeof evt.delta === 'string') {
+              acc += evt.delta
+              setMessages((prev) => prev.map((m) => (m.id === assistantMsg.id ? { ...m, content: acc } : m)))
+            } else if (evt.type === 'error') {
+              throw new Error(evt.message || 'Error del servidor')
+            }
+          } catch (e) {
+            if (e instanceof Error && (e as any).type === 'error') throw e
+            /* ignore non-delta / parse noise */
+          }
+        }
+      }
+
+      setStatus('done')
+      setMascotaMood('exito')
+      const action = parseAction(acc)
+      if (action) dispatchAction(action)
+      if (!getMuted() && acc) speak(acc.slice(0, 300))
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Error desconocido'
+      setError(msg)
+      setMascotaMood('enojado')
+      setStatus('error')
+      // Drop the empty assistant placeholder so the UI stays clean
+      setMessages((prev) => prev.filter((m) => m.id !== assistantMsg.id))
+    } finally {
+      abortRef.current = null
+    }
+  }
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || loading) return
-    setMascotaMood('escuchando')
-    sendMessage({ text: input.trim() })
+    const t = input.trim()
     setInput('')
+    void runQuery(t)
   }
 
   const ask = (q: string) => {
     if (!q || loading) return
-    setMascotaMood('escuchando')
-    sendMessage({ text: q })
+    void runQuery(q)
+  }
+
+  const stop = () => abortRef.current?.abort()
+
+  const regenerate = () => {
+    if (loading) return
+    setMessages((prev) => {
+      const copy = [...prev]
+      if (copy.length && copy[copy.length - 1].role === 'assistant') copy.pop()
+      return copy
+    })
+    if (lastQueryRef.current) void runQuery(lastQueryRef.current)
+  }
+
+  const clearChat = () => {
+    setMessages([])
+    setError(null)
+    setStatus('idle')
+    setMascotaMood('neutro')
   }
 
   const toggleMute = () => {
@@ -221,13 +310,7 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
 
   const lastAiMessage = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === 'assistant') {
-        const t = messages[i].parts
-          .filter((p) => p.type === 'text')
-          .map((p) => (p as { text?: string }).text ?? '')
-          .join('')
-        if (t) return t
-      }
+      if (messages[i].role === 'assistant' && messages[i].content) return messages[i].content
     }
     return null
   }, [messages])
@@ -256,7 +339,7 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
   ]) : EXCEL_SUGGESTIONS
 
   return (
-    <div className="copilot-container" aria-label="compexi Copilot Canvas">
+    <div className="excel-chat-container" aria-label="compexi Chat">
       <div className="speech-bubble-wrapper">
         <div className={`speech-bubble ${loading ? 'thinking' : ''}`} role="region" aria-live="polite">
           <div className="speech-bubble-tail" aria-hidden />
@@ -264,7 +347,7 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
             <div className="speech-bubble-avatar-title">
               <span className="dot-pulse" aria-hidden />
               <strong>compe</strong>
-              <span className="badge-expert">Data & Excel AI</span>
+              <span className="badge-expert">Data &amp; Excel AI</span>
             </div>
             <div className="speech-bubble-status">
               {ttsSpeaking && !muted && (
@@ -308,18 +391,18 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
                   <strong>Error al procesar la respuesta:</strong>
                 </div>
                 <div className="error-message-text">
-                  {error.message || 'No se pudo conectar con el servicio de IA.'}
+                  {error || 'No se pudo conectar con el servicio de IA.'}
                 </div>
                 <div className="error-help-hint">
-                  {error.message?.includes('404') ? (
+                  {error.includes('404') ? (
                     <span>El endpoint <code>/api/chat</code> no está respondiendo en este entorno (si estás en <code>vite dev</code>, asegúrate de correr con Vercel CLI o configurar la API).</span>
-                  ) : error.message?.includes('500') || error.message?.includes('GEMINI_API_KEY') ? (
+                  ) : error.includes('500') || error.includes('GEMINI_API_KEY') ? (
                     <span>Falta configurar la variable de entorno <code>GEMINI_API_KEY</code> en tu servidor o Vercel.</span>
                   ) : (
                     <span>Verifica tu conexión y tu clave de Gemini API.</span>
                   )}
                 </div>
-                <button type="button" className="btn btn-secondary small" onClick={() => regenerate()} style={{ marginTop: 8 }}>
+                <button type="button" className="btn btn-secondary small" onClick={regenerate} style={{ marginTop: 8 }}>
                   <i className="pixelart-icons-font-reload" aria-hidden /> Reintentar consulta
                 </button>
               </div>
@@ -385,7 +468,7 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
           <button
             type="button"
             className="btn btn-secondary small"
-            onClick={() => { setMessages([]); setMascotaMood('neutro') }}
+            onClick={clearChat}
             title="Limpiar conversación"
           >
             <i className="pixelart-icons-font-trash" aria-hidden /> Limpiar
@@ -406,12 +489,11 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
       {chatLogOpen && (
         <div className="chat-expanded-log card" ref={scrollRef} role="log" aria-live="polite">
           {messages.map((m, i) => {
-            const text = m.parts.filter((p) => p.type === 'text').map((p) => (p as { text?: string }).text ?? '').join('')
-            if (!text) return null
+            if (!m.content) return null
             return (
               <div key={i} className={`excel-msg excel-msg-${m.role === 'user' ? 'user' : 'ai'}`}>
                 <div className="excel-msg-body">
-                  {text.split('\n').map((line, li) => (<span key={li}>{line}<br /></span>))}
+                  {m.content.split('\n').map((line, li) => (<span key={li}>{line}<br /></span>))}
                 </div>
               </div>
             )
@@ -420,15 +502,15 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
             <div className="excel-chat-error" role="alert">
               <div>
                 <strong>Error en la petición:</strong>
-                <p style={{ margin: '4px 0 0', fontSize: 12 }}>{error.message || 'Error de conexión con el servidor.'}</p>
+                <p style={{ margin: '4px 0 0', fontSize: 12 }}>{error || 'Error de conexión con el servidor.'}</p>
               </div>
-              <button type="button" className="btn btn-secondary small" onClick={() => regenerate()}>Reintentar</button>
+              <button type="button" className="btn btn-secondary small" onClick={regenerate}>Reintentar</button>
             </div>
           )}
         </div>
       )}
 
-      <div className="copilot-dock">
+      <div className="excel-dock">
         {suggestions.length > 0 && (
           <div className="smart-suggestions" aria-label="Sugerencias rápidas">
             {suggestions.map((q, i) => (
@@ -439,7 +521,7 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
           </div>
         )}
 
-        <form className="copilot-dock-input" onSubmit={submit}>
+        <form className="excel-dock-input" onSubmit={submit}>
           {onOpenFilePicker && (
             <button
               type="button"
@@ -452,7 +534,7 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
             </button>
           )}
           <input
-            className="copilot-text-input"
+            className="excel-text-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={hasData ? 'Pregunta sobre tus datos o pide fórmulas de Excel…' : 'Pregúntame cualquier fórmula o truco de Excel…'}
@@ -460,7 +542,7 @@ export function ExcelChat({ onOpenFilePicker }: { onOpenFilePicker?: () => void 
             disabled={loading}
           />
           {loading ? (
-            <button type="button" className="btn btn-primary btn-dock" onClick={() => stop()} aria-label="Detener">
+            <button type="button" className="btn btn-primary btn-dock" onClick={stop} aria-label="Detener">
               <i className="pixelart-icons-font-close" aria-hidden /> Detener
             </button>
           ) : (

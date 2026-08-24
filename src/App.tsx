@@ -203,7 +203,7 @@ function DashboardContent() {
         <div className="canvas-brand" aria-label="compexi AI">
           <span className="brand-mark" aria-hidden>◈</span>
           <span className="brand-title">compexi</span>
-          <span className="brand-badge">Data & Excel Copilot</span>
+          <span className="brand-badge">Data &amp; Excel AI</span>
         </div>
 
         <div className="canvas-actions">
@@ -225,7 +225,7 @@ function DashboardContent() {
 
       <main className="main-canvas" id="main-content">
         <section
-          className={`hero-copilot ${dragging ? 'dropping' : ''}`}
+          className={`hero-excel ${dragging ? 'dropping' : ''}`}
           aria-label="Escenario interactivo de compe"
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
@@ -240,7 +240,7 @@ function DashboardContent() {
             />
           </div>
 
-          {/* Interactive Speech Bubble & Copilot Chat & MiniCharts */}
+          {/* Interactive Speech Bubble & Excel Chat & MiniCharts */}
           <ExcelChat onOpenFilePicker={() => inputRef.current?.click()} />
 
           {error && (
@@ -302,7 +302,7 @@ function DashboardContent() {
       </main>
 
       <footer className="canvas-footer" role="contentinfo">
-        <span>compexi · Copilot de Excel con IA · Tus datos se procesan localmente en tu navegador</span>
+        <span>compexi · Analista de Excel con IA · Tus datos se procesan localmente en tu navegador</span>
       </footer>
     </div>
   )

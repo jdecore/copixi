@@ -1,23 +1,21 @@
 /**
- * Copixi — Unified Vercel Function (AI SDK v7)
+ * Copixi — Unified Vercel Function (Gemini + OpenRouter fallback)
+ *
  * AGENTS.md §11: Minimal proxy. Protects keys, validates input, rate-limits.
- * Single endpoint handling three shapes:
- *   - chat:    { messages, context? }  -> SSE UI message stream (useChat)
+ * Handles three shapes:
+ *   - chat:    { messages, context? }  -> UI message stream (SSE) for the custom client
  *   - summary: { mode:'summary', context } -> JSON { text }
  *   - extract: { mode:'extract', text, filename } -> JSON { rows | text }
  *
- * Primary model: Gemini (Google). Fallback: OpenRouter if GEMINI_API_KEY is absent.
- * No raw rows are ever sent (§8). Only aggregated context.
+ * Generation uses the official @google/generative-ai SDK (Gemini). If it fails
+ * or no key is set, it falls back to OpenRouter (OpenAI-compatible). The chat
+ * response is a plain SSE string (no streaming Response object) so Vercel never
+ * surfaces a broken stream as FUNCTION_INVOCATION_FAILED.
+ *
+ * Only aggregated context is ever sent (§8). Never raw rows.
  */
 
-import {
-  generateText,
-  convertToModelMessages,
-  createUIMessageStream,
-  createUIMessageStreamResponse,
-} from 'ai'
-import { createGoogle } from '@ai-sdk/google'
-import { createOpenAI } from '@ai-sdk/openai'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const RATE_LIMIT_WINDOW_MS = 60_000
 const RATE_LIMIT_MAX = 20
@@ -38,70 +36,8 @@ function getClientIp(req: Request): string {
   return 'unknown'
 }
 
-// Ordered Gemini model candidates. A retired/inaccessible model should not
-// hard-crash the function: we fall through to the next candidate, then OpenRouter.
-const GEMINI_MODELS = Array.from(
-  new Set(
-    [
-      process.env.GEMINI_MODEL?.trim(),
-      'gemini-2.0-flash',
-      'gemini-1.5-flash',
-      'gemini-2.5-flash',
-      'gemini-flash-latest',
-    ].filter(Boolean) as string[],
-  ),
-)
-const OPENROUTER_MODEL = 'openrouter/auto-beta'
-
-function geminiProvider() {
-  const key = process.env.GEMINI_API_KEY?.trim()
-  return key ? createGoogle({ apiKey: key }) : null
-}
-
-function openrouterModel() {
-  const key = process.env.OPENROUTER_API_KEY?.trim()
-  if (!key) return null
-  return createOpenAI({
-    baseURL: 'https://openrouter.ai/api/v1',
-    apiKey: key,
-    headers: { 'HTTP-Referer': 'https://copixi.vercel.app', 'X-Title': 'Copixi' },
-  })(OPENROUTER_MODEL)
-}
-
-// Build the list of candidate models (Gemini chain first, OpenRouter last).
-function candidateModels() {
-  const google = geminiProvider()
-  const models: any[] = GEMINI_MODELS.map((m) => (google ? google(m) : null)).filter(Boolean)
-  const or = openrouterModel()
-  if (or) models.push(or)
-  return models
-}
-
-// Run a generateText call across candidates, returning the first success.
-// On total failure, throws the last provider error (surfaced as a clean HTTP error).
-async function generateWithFallback(opts: any) {
-  const models = candidateModels()
-  if (models.length === 0) {
-    throw new Error('Server misconfiguration: no AI provider key set (GEMINI_API_KEY or OPENROUTER_API_KEY).')
-  }
-  let lastErr: unknown
-  for (const model of models) {
-    try {
-      const result = await generateText({ ...opts, model })
-      return result.text
-    } catch (err) {
-      lastErr = err
-      const msg = err instanceof Error ? err.message : String(err)
-      // Auth/key errors are not worth retrying with the same provider key.
-      if (/API key not valid|permission|denied|401|403|UNAUTHENTICATED/i.test(msg)) {
-        // skip remaining models that share the same Gemini key, but keep trying OpenRouter (different key)
-        if (!/openrouter/i.test(String(model))) continue
-      }
-      // model-not-found / 404 -> try next candidate
-    }
-  }
-  throw lastErr
-}
+const GEMINI_MODEL = process.env.GEMINI_MODEL?.trim() || 'gemini-2.0-flash'
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL?.trim() || 'openrouter/auto-beta'
 
 const EXCEL_SYSTEM = `Eres compe, un experto en Microsoft Excel y análisis de datos. Responde en español, de forma concisa y práctica.
 
@@ -127,11 +63,102 @@ function buildContextBlock(context: unknown): string {
   return `\n\nContexto agregado del dataset (sin filas crudas):\n${json}`
 }
 
+// ---- Generation ----
+
+async function genGemini(prompt: string, system: string): Promise<string> {
+  const key = process.env.GEMINI_API_KEY?.trim()
+  if (!key) throw new Error('no GEMINI_API_KEY')
+  const genAI = new GoogleGenerativeAI(key)
+  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL, systemInstruction: system })
+  const res = await model.generateContent(prompt)
+  return res.response.text()
+}
+
+async function genOpenRouter(prompt: string, system: string): Promise<string> {
+  const key = process.env.OPENROUTER_API_KEY?.trim()
+  if (!key) throw new Error('no OPENROUTER_API_KEY')
+  const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${key}`,
+      'HTTP-Referer': 'https://copixi.vercel.app',
+      'X-Title': 'Copixi',
+    },
+    body: JSON.stringify({
+      model: OPENROUTER_MODEL,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: prompt },
+      ],
+      max_tokens: 1024,
+      temperature: 0.5,
+    }),
+  })
+  if (!r.ok) {
+    const t = await r.text()
+    throw new Error(`openrouter ${r.status}: ${t.slice(0, 200)}`)
+  }
+  const j = (await r.json()) as { choices?: { message?: { content?: string } }[] }
+  return j.choices?.[0]?.message?.content ?? ''
+}
+
+async function generate(prompt: string, system: string): Promise<string> {
+  const errors: string[] = []
+  try {
+    return await genGemini(prompt, system)
+  } catch (e) {
+    errors.push(`gemini: ${e instanceof Error ? e.message : String(e)}`)
+  }
+  try {
+    return await genOpenRouter(prompt, system)
+  } catch (e) {
+    errors.push(`openrouter: ${e instanceof Error ? e.message : String(e)}`)
+  }
+  throw new Error(errors.join(' | '))
+}
+
+// ---- SSE helpers (plain string response, Vercel-safe) ----
+
+function sseError(message: string): Response {
+  return new Response(JSON.stringify({ error: 'AI provider error', detail: message.slice(0, 500) }), {
+    status: 502,
+    headers: { 'content-type': 'application/json' },
+  })
+}
+
+function sseChatText(text: string): Response {
+  const id = `msg-${Date.now()}`
+  const chunks = [
+    `data: ${JSON.stringify({ type: 'start', messageId: id })}`,
+    `data: ${JSON.stringify({ type: 'text-start', id })}`,
+    `data: ${JSON.stringify({ type: 'text-delta', delta: text })}`,
+    `data: ${JSON.stringify({ type: 'text-end', id })}`,
+    `data: ${JSON.stringify({ type: 'finish', finishReason: 'stop' })}`,
+  ].join('\n\n') + '\n\n'
+  return new Response(chunks, {
+    status: 200,
+    headers: {
+      'content-type': 'text/event-stream',
+      'cache-control': 'no-cache, no-transform',
+      connection: 'close',
+    },
+  })
+}
+
+function messageText(m: any): string {
+  if (typeof m?.content === 'string') return m.content
+  if (Array.isArray(m?.parts)) return m.parts.filter((p: any) => p?.type === 'text').map((p: any) => p.text ?? '').join('')
+  return ''
+}
+
+// ---- Handler ----
+
 export default async function handler(req: Request) {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed. Use POST.' }), {
       status: 405,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'content-type': 'application/json' },
     })
   }
 
@@ -139,7 +166,7 @@ export default async function handler(req: Request) {
   if (isRateLimited(ip)) {
     return new Response(JSON.stringify({ error: 'Rate limit exceeded. Try again later.' }), {
       status: 429,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'content-type': 'application/json' },
     })
   }
 
@@ -149,7 +176,7 @@ export default async function handler(req: Request) {
   } catch {
     return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
       status: 400,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'content-type': 'application/json' },
     })
   }
 
@@ -162,20 +189,20 @@ export default async function handler(req: Request) {
         if (!ctx || typeof ctx !== 'object') {
           return new Response(JSON.stringify({ error: 'summary requires context object' }), {
             status: 400,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'content-type': 'application/json' },
           })
         }
         const ctxStr = JSON.stringify(ctx)
         if (ctxStr.length > 8000) {
           return new Response(JSON.stringify({ error: 'context too large (max 8000 chars)' }), {
             status: 400,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'content-type': 'application/json' },
           })
         }
         const prompt = `Genera un resumen en español en 3-5 bullets concisos + 1 insight accionable sobre este dataset. Cita números reales del contexto. No inventes columnas. Texto plano, sin JSON.\n\nContexto: ${ctxStr}`
-        const text = (await generateWithFallback({ messages: [{ role: 'user', content: prompt }], maxOutputTokens: 512 })).trim()
-        if (!text) return new Response(JSON.stringify({ error: 'Empty summary' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
-        return new Response(JSON.stringify({ text }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+        const text = (await generate(prompt, EXCEL_SYSTEM)).trim()
+        if (!text) return new Response(JSON.stringify({ error: 'Empty summary' }), { status: 200, headers: { 'content-type': 'application/json' } })
+        return new Response(JSON.stringify({ text }), { status: 200, headers: { 'content-type': 'application/json' } })
       }
 
       const text = typeof body.text === 'string' ? body.text : ''
@@ -183,17 +210,17 @@ export default async function handler(req: Request) {
       if (!text.trim()) {
         return new Response(JSON.stringify({ error: 'extract requires text string' }), {
           status: 400,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'content-type': 'application/json' },
         })
       }
       if (text.length > 8000) {
         return new Response(JSON.stringify({ error: 'text too large (max 8000 chars, send truncated)' }), {
           status: 400,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'content-type': 'application/json' },
         })
       }
       const prompt = `Extrae datos tabulares de este documento "${filename}". Texto (truncado):\n"""${text}"""\n\nInstrucciones: Si hay tabla, retorna JSON array de objetos con keys = columnas normalizadas (lowercase, sin espacios). Valores string o number. Si no hay tabla pero hay datos estructurados, inventa columnas razonables y extrae hasta 30 filas. Si no hay datos tabulares, retorna []. Responde SOLO con el JSON array, sin markdown ni explicación.`
-      const raw = await generateWithFallback({ messages: [{ role: 'user', content: prompt }], maxOutputTokens: 1200 })
+      const raw = await generate(prompt, EXCEL_SYSTEM)
       const cleaned = raw.trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim()
       let rows: unknown = null
       try {
@@ -205,57 +232,36 @@ export default async function handler(req: Request) {
       if (!rows) {
         return new Response(JSON.stringify({ text: raw, rows: null, error: 'No valid JSON array extracted' }), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'content-type': 'application/json' },
         })
       }
-      return new Response(JSON.stringify({ rows }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ rows }), { status: 200, headers: { 'content-type': 'application/json' } })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
-      return new Response(JSON.stringify({ error: 'AI provider error', detail: message.slice(0, 500) }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return sseError(message)
     }
   }
 
-  const messages = Array.isArray(body.messages) ? (body.messages as Parameters<typeof convertToModelMessages>[0]) : null
+  // Chat mode
+  const messages = Array.isArray(body.messages) ? (body.messages as any[]) : null
   if (!messages || messages.length === 0) {
     return new Response(JSON.stringify({ error: 'Invalid request: expected messages array.' }), {
       status: 400,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'content-type': 'application/json' },
     })
   }
 
   const contextBlock = buildContextBlock(body.context)
-  const system = EXCEL_SYSTEM + contextBlock
+  const conversation = messages
+    .map((m) => `${m.role === 'assistant' ? 'Asistente' : 'Usuario'}: ${messageText(m)}`)
+    .join('\n')
+  const prompt = `${conversation}${contextBlock}`
 
   try {
-    const modelMessages = await convertToModelMessages(messages)
-    // Generate non-streaming first so any provider/model/key error is caught
-    // BEFORE we send the response. This prevents Vercel from surfacing a broken
-    // stream as FUNCTION_INVOCATION_FAILED.
-    const text = await generateWithFallback({
-      messages: modelMessages,
-      system,
-      maxOutputTokens: 1024,
-      temperature: 0.5,
-    })
-
-    // Re-emit as a UI message stream so the client useChat renders it normally.
-    const id = globalThis.crypto?.randomUUID?.() ?? `msg-${Date.now()}`
-    const stream = createUIMessageStream({
-      execute({ writer }) {
-        writer.write({ type: 'text-start', id } as any)
-        writer.write({ type: 'text-delta', delta: text } as any)
-        writer.write({ type: 'text-end', id } as any)
-      },
-    })
-    return createUIMessageStreamResponse({ stream })
+    const text = await generate(prompt, EXCEL_SYSTEM)
+    return sseChatText(text)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
-    return new Response(JSON.stringify({ error: 'AI provider error', detail: message.slice(0, 500) }), {
-      status: 502,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return sseError(message)
   }
 }
