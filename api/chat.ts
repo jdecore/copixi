@@ -10,7 +10,12 @@
  * No raw rows are ever sent (§8). Only aggregated context.
  */
 
-import { streamText, generateText, convertToModelMessages } from 'ai'
+import {
+  generateText,
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+} from 'ai'
 import { createGoogle } from '@ai-sdk/google'
 import { createOpenAI } from '@ai-sdk/openai'
 
@@ -33,24 +38,69 @@ function getClientIp(req: Request): string {
   return 'unknown'
 }
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+// Ordered Gemini model candidates. A retired/inaccessible model should not
+// hard-crash the function: we fall through to the next candidate, then OpenRouter.
+const GEMINI_MODELS = Array.from(
+  new Set(
+    [
+      process.env.GEMINI_MODEL?.trim(),
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-2.5-flash',
+      'gemini-flash-latest',
+    ].filter(Boolean) as string[],
+  ),
+)
 const OPENROUTER_MODEL = 'openrouter/auto-beta'
 
-function getModel() {
-  const geminiKey = process.env.GEMINI_API_KEY?.trim()
-  if (geminiKey) {
-    const google = createGoogle({ apiKey: geminiKey })
-    return google(GEMINI_MODEL)
+function geminiProvider() {
+  const key = process.env.GEMINI_API_KEY?.trim()
+  return key ? createGoogle({ apiKey: key }) : null
+}
+
+function openrouterModel() {
+  const key = process.env.OPENROUTER_API_KEY?.trim()
+  if (!key) return null
+  return createOpenAI({
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: key,
+    headers: { 'HTTP-Referer': 'https://copixi.vercel.app', 'X-Title': 'Copixi' },
+  })(OPENROUTER_MODEL)
+}
+
+// Build the list of candidate models (Gemini chain first, OpenRouter last).
+function candidateModels() {
+  const google = geminiProvider()
+  const models: any[] = GEMINI_MODELS.map((m) => (google ? google(m) : null)).filter(Boolean)
+  const or = openrouterModel()
+  if (or) models.push(or)
+  return models
+}
+
+// Run a generateText call across candidates, returning the first success.
+// On total failure, throws the last provider error (surfaced as a clean HTTP error).
+async function generateWithFallback(opts: any) {
+  const models = candidateModels()
+  if (models.length === 0) {
+    throw new Error('Server misconfiguration: no AI provider key set (GEMINI_API_KEY or OPENROUTER_API_KEY).')
   }
-  const orKey = process.env.OPENROUTER_API_KEY?.trim()
-  if (orKey) {
-    return createOpenAI({
-      baseURL: 'https://openrouter.ai/api/v1',
-      apiKey: orKey,
-      headers: { 'HTTP-Referer': 'https://copixi.vercel.app', 'X-Title': 'Copixi' },
-    })(OPENROUTER_MODEL)
+  let lastErr: unknown
+  for (const model of models) {
+    try {
+      const result = await generateText({ ...opts, model })
+      return result.text
+    } catch (err) {
+      lastErr = err
+      const msg = err instanceof Error ? err.message : String(err)
+      // Auth/key errors are not worth retrying with the same provider key.
+      if (/API key not valid|permission|denied|401|403|UNAUTHENTICATED/i.test(msg)) {
+        // skip remaining models that share the same Gemini key, but keep trying OpenRouter (different key)
+        if (!/openrouter/i.test(String(model))) continue
+      }
+      // model-not-found / 404 -> try next candidate
+    }
   }
-  return null
+  throw lastErr
 }
 
 const EXCEL_SYSTEM = `Eres compe, un experto en Microsoft Excel y análisis de datos. Responde en español, de forma concisa y práctica.
@@ -106,14 +156,6 @@ export default async function handler(req: Request) {
   const mode = typeof body.mode === 'string' ? body.mode : undefined
 
   if (mode === 'summary' || mode === 'extract') {
-    const model = getModel()
-    if (!model) {
-      return new Response(JSON.stringify({ error: 'Server misconfiguration: no AI provider key set (GEMINI_API_KEY or OPENROUTER_API_KEY).' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    }
-
     try {
       if (mode === 'summary') {
         const ctx = body.context
@@ -131,8 +173,7 @@ export default async function handler(req: Request) {
           })
         }
         const prompt = `Genera un resumen en español en 3-5 bullets concisos + 1 insight accionable sobre este dataset. Cita números reales del contexto. No inventes columnas. Texto plano, sin JSON.\n\nContexto: ${ctxStr}`
-        const result = await generateText({ model, messages: [{ role: 'user', content: prompt }], maxOutputTokens: 512 })
-        const text = result.text.trim()
+        const text = (await generateWithFallback({ messages: [{ role: 'user', content: prompt }], maxOutputTokens: 512 })).trim()
         if (!text) return new Response(JSON.stringify({ error: 'Empty summary' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
         return new Response(JSON.stringify({ text }), { status: 200, headers: { 'Content-Type': 'application/json' } })
       }
@@ -152,8 +193,8 @@ export default async function handler(req: Request) {
         })
       }
       const prompt = `Extrae datos tabulares de este documento "${filename}". Texto (truncado):\n"""${text}"""\n\nInstrucciones: Si hay tabla, retorna JSON array de objetos con keys = columnas normalizadas (lowercase, sin espacios). Valores string o number. Si no hay tabla pero hay datos estructurados, inventa columnas razonables y extrae hasta 30 filas. Si no hay datos tabulares, retorna []. Responde SOLO con el JSON array, sin markdown ni explicación.`
-      const result = await generateText({ model, messages: [{ role: 'user', content: prompt }], maxOutputTokens: 1200 })
-      const cleaned = result.text.trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim()
+      const raw = await generateWithFallback({ messages: [{ role: 'user', content: prompt }], maxOutputTokens: 1200 })
+      const cleaned = raw.trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim()
       let rows: unknown = null
       try {
         const parsed = JSON.parse(cleaned)
@@ -162,7 +203,7 @@ export default async function handler(req: Request) {
         rows = null
       }
       if (!rows) {
-        return new Response(JSON.stringify({ text: result.text, rows: null, error: 'No valid JSON array extracted' }), {
+        return new Response(JSON.stringify({ text: raw, rows: null, error: 'No valid JSON array extracted' }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         })
@@ -185,34 +226,35 @@ export default async function handler(req: Request) {
     })
   }
 
-  const model = getModel()
-  if (!model) {
-    return new Response(JSON.stringify({ error: 'Server misconfiguration: no AI provider key set (GEMINI_API_KEY or OPENROUTER_API_KEY).' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-
   const contextBlock = buildContextBlock(body.context)
   const system = EXCEL_SYSTEM + contextBlock
 
   try {
     const modelMessages = await convertToModelMessages(messages)
-    const result = streamText({
-      model,
-      system,
+    // Generate non-streaming first so any provider/model/key error is caught
+    // BEFORE we send the response. This prevents Vercel from surfacing a broken
+    // stream as FUNCTION_INVOCATION_FAILED.
+    const text = await generateWithFallback({
       messages: modelMessages,
+      system,
       maxOutputTokens: 1024,
       temperature: 0.5,
-      onError: ({ error }) => {
-        if (process.env.NODE_ENV !== 'production') console.error('[Copixi] chat stream error', error)
+    })
+
+    // Re-emit as a UI message stream so the client useChat renders it normally.
+    const id = globalThis.crypto?.randomUUID?.() ?? `msg-${Date.now()}`
+    const stream = createUIMessageStream({
+      execute({ writer }) {
+        writer.write({ type: 'text-start', id } as any)
+        writer.write({ type: 'text-delta', delta: text } as any)
+        writer.write({ type: 'text-end', id } as any)
       },
     })
-    return result.toUIMessageStreamResponse()
+    return createUIMessageStreamResponse({ stream })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
-    return new Response(JSON.stringify({ error: 'Failed to start chat stream', detail: message.slice(0, 500) }), {
-      status: 500,
+    return new Response(JSON.stringify({ error: 'AI provider error', detail: message.slice(0, 500) }), {
+      status: 502,
       headers: { 'Content-Type': 'application/json' },
     })
   }
