@@ -919,7 +919,9 @@
 .fenix.mood-escuchando .gryph-eye,
 .kitsune1.mood-escuchando .gryph-eye { transform: scale(1.06); }
 
-/* ---------- VARIANTES BÚHO / FÉNIX / KITSUNE — mismo molde redondo, acento cobre ---------- */
+/* ---------- VARIANTES BÚHO / FÉNIX / KITSUNE — por ahora heredan molde gryph-round redondo */
+ /* Se dejan idénticas al grifo para garantizar que se vean bien como el robot.
+    Diferenciación solo por hint de habilidad, no por CSS complejo. */
 #mascota.buho,
 #mascota.fenix,
 #mascota.kitsune1 {
@@ -930,21 +932,3 @@
   width: var(--gryph-size, var(--robot-size, 200px));
   height: var(--gryph-size, var(--robot-size, 200px));
 }
-/* Búho: ojos extra grandes, pico piquito, sin cejas marcadas */
-#mascota.buho .gryph-eye { width: 30%; background: radial-gradient(circle at 30% 26%, #fffaf0 0%, #e8b4a0 22%, #b87333 44%, #7a3b1a 100%); }
-#mascota.buho .gryph-brow { background: #9c5a2e; opacity: 0.35; height: 6%; top: 16%; }
-#mascota.buho .gryph-beak { width: 18%; height: 18%; bottom: 16%; }
-#mascota.buho .beak-upper { border-radius: 50% 50% 30% 30% / 60% 60% 40% 40%; }
-#mascota.buho .mane-lock { background: #f5d6bf; border-color: #e8b4a0; }
-/* Fénix: cresta flame rojiza, pico más fino, ojos almendrados */
-#mascota.fenix .gryph-crest { background: linear-gradient(180deg, #ff8c2f 0%, #c2410c 100%); width: 28%; height: 14%; }
-#mascota.fenix .gryph-eye { background: radial-gradient(circle at 30% 26%, #fffaf0 0%, #ff8c2f 24%, #c2410c 44%, #7a1212 100%); }
-#mascota.fenix .gryph-brow { background: linear-gradient(180deg, #ff8c2f, #9a1212); }
-#mascota.fenix .beak-upper { background: linear-gradient(180deg, #ffedd5 0%, #ff8c2f 45%, #c2410c 100%); }
-#mascota.fenix .mane-lock { background: linear-gradient(180deg, #fff 0%, #ff8c2f 55%, #9a1212 100%); }
-/* Kitsune: orejas puntiagudas, cola más ancha, ojos avellanados */
-#mascota.kitsune1 .gryph-ear { width: 16%; height: 24%; border-radius: 50% 50% 10% 10% / 60% 60% 20% 20%; background: linear-gradient(180deg, #fff 0%, #f5d6bf 60%, #d4926b 100%); }
-#mascota.kitsune1 .gryph-ear::after { inset: 32% 22% 18% 22%; background: #fff; }
-#mascota.kitsune1 .gryph-eye { width: 26%; border-radius: 42% / 50%; background: radial-gradient(circle at 30% 26%, #fffaf0 0%, #d4926b 22%, #9c5a2e 44%, #3d1f0a 100%); }
-#mascota.kitsune1 .gryph-tail { width: 20%; background: linear-gradient(180deg, var(--gryph-body) 0%, #d4926b 60%, #fff 100%); border-radius: 0 60% 60% 0 / 0 60% 40% 0; }
-#mascota.kitsune1 .tail-tuft { width: 18px; height: 18px; background: #fff; border-color: #d4926b; }
