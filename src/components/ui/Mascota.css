@@ -450,34 +450,54 @@
   border: 1.2px solid var(--gryph-nose);
   border-radius: 40% 40% 30% 30% / 60% 60% 40% 40%;
 }
-/* Reskin cobre por variante — misma forma redonda que robot */
-#mascota.gryph .robot-head-shell { background: linear-gradient(170deg, #fffdf8 0%, var(--gryph-feather) 55%, var(--gryph-feather-mid) 100%); border-color: var(--gryph-body-outline); }
-#mascota.gryph .robot-visor { background: radial-gradient(circle at 50% 40%, #fffaf0 0%, #fde6d0 100%); border-color: var(--gryph-body-outline); }
-#mascota.gryph .neon-eye { background: var(--gryph-eye); border-color: var(--gryph-nose); box-shadow: 0 0 0 2px rgba(245,214,191,0.8), 0 0 8px var(--gryph-eye-glow); }
+/* Reskin por variante — CREA la criatura dentro del molde robot redondo */
+#mascota.gryph .robot-head-shell { background: linear-gradient(170deg, #fffdf8 0%, var(--gryph-feather) 55%, var(--gryph-feather-mid) 100%); border-color: var(--gryph-body-outline); box-shadow: inset -4px -6px 8px rgba(156,90,46,0.18), inset 4px 6px 8px #fff, 0 4px 10px rgba(0,0,0,0.05); }
+#mascota.gryph .robot-visor { background: radial-gradient(circle at 50% 35%, #fffaf0 0%, #fde6d0 45%, #e8b4a0 100%); border-color: var(--gryph-body-outline); }
+#mascota.gryph .neon-eye { background: radial-gradient(circle at 30% 28%, #fffaf0 0%, var(--gryph-eye-bright) 22%, var(--gryph-eye) 44%, var(--gryph-nose) 100%); border-color: var(--gryph-nose); box-shadow: 0 0 0 2px rgba(245,214,191,0.85), 0 0 10px var(--gryph-eye-glow); width: 30%; }
+#mascota.gryph .creature-beak { width: 30%; height: 22%; bottom: 10%; }
+#mascota.gryph .creature-beak .beak-tip { width: 58%; height: 72%; background: linear-gradient(180deg, #fde6c8 0%, var(--gryph-beak) 40%, var(--gryph-beak-deep) 100%); border-radius: 42% 42% 28% 28% / 65% 65% 35% 35%; border-width: 1.4px; }
+#mascota.gryph .creature-ears span { background: var(--gryph-mane); border-color: var(--gryph-nose); height: 16px; }
+#mascota.gryph .creature-crest { background: var(--gryph-mane-deep); width: 16%; height: 8%; }
 #mascota.gryph .robot-body-shell { background: linear-gradient(175deg, #fffdf8 0%, var(--gryph-body) 55%, var(--gryph-body-shadow) 100%); border-color: var(--gryph-body-outline); }
 #mascota.gryph .robot-arm { background: linear-gradient(180deg, #fff 0%, var(--gryph-feather-mid) 100%); border-color: var(--gryph-body-outline); }
-#mascota.gryph .core-light { background: var(--gryph-eye); box-shadow: 0 0 8px var(--gryph-eye-glow); }
-#mascota.gryph .robot-thruster-glow { background: radial-gradient(ellipse, rgba(184,115,51,0.22) 0%, transparent 70%); }
+#mascota.gryph .core-light { background: var(--gryph-eye); box-shadow: 0 0 10px var(--gryph-eye-glow); }
+#mascota.gryph .robot-thruster-glow { background: radial-gradient(ellipse, rgba(184,115,51,0.26) 0%, transparent 70%); }
 
 #mascota.buho .robot-head-shell { background: linear-gradient(170deg, #fff 0%, #fff7ed 55%, #f5d6bf 100%); border-color: #9c5a2e; }
-#mascota.buho .robot-visor { background: radial-gradient(circle at 50% 40%, #fff 0%, #f5d6bf 100%); border-color: #9c5a2e; }
-#mascota.buho .neon-eye { width: 36%; background: radial-gradient(circle at 30% 26%, #fff 0%, #f5d6bf 28%, #d4926b 44%, #9c5a2e 100%); border-width: 2.2px; box-shadow: 0 0 0 3px rgba(245,214,191,0.9), 0 0 8px var(--gryph-eye-glow); }
-#mascota.buho .creature-beak .beak-tip { width: 42%; height: 52%; background: #e8a04a; }
-#mascota.buho .robot-body-shell { background: linear-gradient(175deg, #fff 0%, #f5d6bf 55%, #e8b4a0 100%); border-color: #9c5a2e; }
+#mascota.buho .robot-visor { background: radial-gradient(circle at 50% 38%, #fff 0%, #fff7ed 45%, #f5d6bf 100%); border-color: #9c5a2e; box-shadow: inset 0 4px 10px rgba(156,90,46,0.12), 0 0 0 2px #fff; }
+#mascota.buho .neon-eye { width: 38%; background: radial-gradient(circle at 32% 28%, #fff 0%, #fff7ed 22%, #f5d6bf 38%, #d4926b 58%, #9c5a2e 100%); border-width: 2.4px; border-color: #7a3b1a; box-shadow: 0 0 0 4px #fff, 0 0 0 6px rgba(212,146,107,0.35), 0 0 12px var(--gryph-eye-glow); }
+#mascota.buho .neon-eye .neon-pupil { width: 52%; height: 52%; background: #1a0f08; }
+#mascota.buho .creature-ears span { height: 14px; width: 12%; background: #f5d6bf; border-color: #9c5a2e; border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%; }
+#mascota.buho .creature-crest { display: none; }
+#mascota.buho .creature-beak { width: 18%; height: 12%; bottom: 14%; }
+#mascota.buho .creature-beak .beak-tip { width: 36%; height: 48%; background: #f59e0b; border-color: #7a3b1a; border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%; }
+#mascota.buho .robot-body-shell { background: linear-gradient(175deg, #fff 0%, #fff7ed 50%, #f5d6bf 80%); border-color: #9c5a2e; }
+#mascota.buho .robot-arm { background: linear-gradient(180deg, #fff7ed 0%, #f5d6bf 100%); border-color: #9c5a2e; }
+#mascota.buho .core-light { background: #d4926b; }
 
-#mascota.fenix .robot-head-shell { background: linear-gradient(170deg, #fff 0%, #ffedd5 55%, #fed7aa 100%); border-color: #c2410c; }
-#mascota.fenix .robot-visor { background: radial-gradient(circle at 50% 40%, #fff 0%, #ffedd5 100%); border-color: #c2410c; }
-#mascota.fenix .neon-eye { background: radial-gradient(circle at 30% 26%, #fff 0%, #ff8c2f 28%, #c2410c 100%); border-color: #7f1d1d; }
-#mascota.fenix .creature-crest { background: linear-gradient(180deg, #ff8c2f 0%, #c2410c 70%, #7f1d1d 100%); height: 14%; width: 22%; }
-#mascota.fenix .creature-beak .beak-tip { background: linear-gradient(180deg, #ffedd5 0%, #ff8c2f 50%, #c2410c 100%); }
-#mascota.fenix .robot-body-shell { background: linear-gradient(175deg, #fff 0%, #ffedd5 55%, #fdba74 100%); border-color: #c2410c; }
-#mascota.fenix .robot-thruster-glow { background: radial-gradient(ellipse, rgba(194,65,12,0.28) 0%, transparent 70%); }
-#mascota.fenix .core-light { background: #ff8c2f; }
+#mascota.fenix .robot-head-shell { background: linear-gradient(170deg, #fff 0%, #ffedd5 50%, #fed7aa 100%); border-color: #c2410c; }
+#mascota.fenix .robot-visor { background: radial-gradient(circle at 50% 35%, #fff 0%, #ffedd5 45%, #fdba74 100%); border-color: #c2410c; }
+#mascota.fenix .neon-eye { width: 28%; background: radial-gradient(circle at 30% 26%, #fffaf0 0%, #ff8c2f 30%, #c2410c 60%, #7f1d1d 100%); border-color: #7f1d1d; border-radius: 48% 48% 42% 42% / 55% 55% 45% 45%; }
+#mascota.fenix .creature-crest { display: block; background: linear-gradient(180deg, #fff7ed 0%, #ff8c2f 30%, #c2410c 60%, #7f1d1d 100%); height: 22%; width: 28%; top: -10%; border-radius: 50% 50% 30% 30% / 40% 40% 60% 60%; clip-path: polygon(50% 0, 62% 26%, 78% 14%, 74% 36%, 88% 48%, 72% 62%, 78% 84%, 50% 100%, 22% 84%, 28% 62%, 12% 48%, 26% 36%, 22% 14%, 38% 26%); border: 1.2px solid #7f1d1d; }
+#mascota.fenix .creature-ears { display: none; }
+#mascota.fenix .creature-beak { width: 22%; height: 16%; }
+#mascota.fenix .creature-beak .beak-tip { background: linear-gradient(180deg, #fff7ed 0%, #ff8c2f 45%, #9a1212 100%); width: 48%; border-radius: 42% 42% 32% 32% / 70% 70% 30% 30%; }
+#mascota.fenix .robot-body-shell { background: linear-gradient(175deg, #fff 0%, #ffedd5 45%, #ff8c2f 75%, #c2410c 100%); border-color: #7f1d1d; }
+#mascota.fenix .robot-arm { background: linear-gradient(180deg, #ffedd5 0%, #ff8c2f 60%, #7f1d1d 100%); border-color: #7f1d1d; }
+#mascota.fenix .robot-thruster-glow { background: radial-gradient(ellipse, rgba(194,65,12,0.38) 0%, rgba(255,140,47,0.22) 35%, transparent 70%); height: 12%; bottom: 4%; }
+#mascota.fenix .core-light { background: #ff8c2f; box-shadow: 0 0 12px #ff8c2f, 0 0 20px rgba(194,65,12,0.6); animation: corePulse 1.2s infinite; }
 
-#mascota.kitsune1 .robot-head-shell { background: linear-gradient(170deg, #fff 0%, #fff7ed 55%, #fde6d0 100%); border-color: #9c5a2e; }
-#mascota.kitsune1 .creature-ears span { height: 22px; border-radius: 60% 60% 20% 20% / 70% 70% 30% 30%; }
-#mascota.kitsune1 .neon-eye { border-radius: 48% / 60%; background: radial-gradient(circle at 30% 26%, #fffaf0 0%, #f5d6bf 28%, #d4926b 100%); }
-#mascota.kitsune1 .creature-beak { width: 14%; height: 14%; background: #1a0f08; border-radius: 50%; bottom: 16%; }
+#mascota.kitsune1 .robot-head-shell { background: linear-gradient(170deg, #fff 0%, #fff7ed 50%, #fde6d0 85%, #e8b4a0 100%); border-color: #9c5a2e; }
+#mascota.kitsune1 .creature-ears { top: 0%; }
+#mascota.kitsune1 .creature-ears span { height: 28px; width: 18%; background: linear-gradient(180deg, #fff 0%, #f5d6bf 40%, #d4926b 70%, #fff 100%); border-radius: 70% 70% 18% 18% / 80% 80% 20% 20%; border-color: #9c5a2e; }
+#mascota.kitsune1 .creature-ears span::after { content: ''; position: absolute; inset: 28% 22% 18% 22%; background: #ff8c9e; border-radius: 50% 50% 40% 40%; opacity: 0.85; }
+#mascota.kitsune1 .neon-eye { width: 30%; border-radius: 48% 48% 44% 44% / 58% 58% 42% 42%; background: radial-gradient(circle at 30% 26%, #fffaf0 0%, #f5d6bf 28%, #d4926b 48%, #7a3b1a 100%); transform: rotate(-2deg); }
+#mascota.kitsune1 .neon-eye.right { transform: rotate(2deg); }
+#mascota.kitsune1 .creature-crest { display: none; }
+#mascota.kitsune1 .creature-beak { width: 16%; height: 12%; background: #1a0f08; border-radius: 50% 50% 50% 50% / 55% 55% 45% 45%; bottom: 15%; }
 #mascota.kitsune1 .creature-beak .beak-tip { display: none; }
-#mascota.kitsune1 .robot-body-shell { background: linear-gradient(175deg, #fff 0%, #f5d6bf 55%, #fff 100%); border-color: #9c5a2e; }
-#mascota.kitsune1 .robot-thruster-glow { background: radial-gradient(ellipse, rgba(245,214,191,0.5) 0%, transparent 70%); }
+#mascota.kitsune1 .creature-beak::after { content: ''; position: absolute; bottom: -3px; left: 50%; transform: translateX(-50%); width: 40%; height: 2px; background: #fff; border-radius: 1px; opacity: 0.9; }
+#mascota.kitsune1 .robot-body-shell { background: linear-gradient(175deg, #fff 0%, #fff7ed 45%, #f5d6bf 70%, #e8b4a0 100%); border-color: #9c5a2e; }
+#mascota.kitsune1 .robot-arm { background: linear-gradient(180deg, #fff 0%, #f5d6bf 100%); border-color: #9c5a2e; }
+#mascota.kitsune1 .robot-thruster-glow { background: radial-gradient(ellipse, #fff 0%, #f5d6bf 30%, #d4926b 55%, transparent 70%); height: 10%; width: 40%; }
+#mascota.kitsune1 .core-light { background: #fff; border: 1.5px solid #d4926b; }
