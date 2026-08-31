@@ -12,6 +12,7 @@ import { DataTable } from './components/data/DataTable'
 import { DataProfiler } from './components/data/DataProfiler'
 import { Mascota } from './components/ui/Mascota'
 import { ExcelChat } from './components/excel/ExcelChat'
+import { BootSplash, type SplashAgent } from './components/splash/BootSplash'
 import { speak } from './lib/tts'
 import type { SavedAnalysis } from './lib/storage'
 import { saveDataset } from './lib/storage'
@@ -91,14 +92,28 @@ function DashboardContent() {
   const [dragging, setDragging] = useState(false)
   const [mascotaMood, setMascotaMood] = useState<MascotaMood>('neutro')
   const [dataOpen, setDataOpen] = useState(true)
-  const [mascotaVariant, setMascotaVariant] = useState<'gryph' | 'robot'>(() => {
-    try { const v = localStorage.getItem('copixi:mascota-variant'); return v === 'robot' ? 'robot' : 'gryph' } catch { return 'gryph' }
+  const [mascotaVariant, setMascotaVariant] = useState<'gryph' | 'robot' | SplashAgent>(() => {
+    try {
+      const v = localStorage.getItem('copixi:mascota-variant')
+      if (v === 'robot' || v === 'gryph' || v === 'buho' || v === 'fenix' || v === 'kitsune1') return v as SplashAgent
+      return 'gryph'
+    } catch { return 'gryph' }
+  })
+  const [showSplash, setShowSplash] = useState(() => {
+    try { return localStorage.getItem('copixi:boot-seen') !== 'true' } catch { return true }
   })
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     try { localStorage.setItem('copixi:mascota-variant', mascotaVariant) } catch {}
   }, [mascotaVariant])
+  const handleSplashClose = () => {
+    setShowSplash(false)
+    try { localStorage.setItem('copixi:boot-seen', 'true') } catch {}
+  }
+  const handleSplashSelect = (a: SplashAgent) => {
+    setMascotaVariant(a)
+  }
 
   const hasData = !!rawRows
 
@@ -203,17 +218,23 @@ function DashboardContent() {
     if (file) parseFile(file)
   }, [parseFile])
 
+  const effectiveVariant = mascotaVariant as 'gryph' | 'robot' | 'buho' | 'fenix' | 'kitsune1'
+
   return (
     <div className="canvas-wrapper">
+      {showSplash && (
+        <BootSplash initial={mascotaVariant as SplashAgent} onSelect={handleSplashSelect} onClose={handleSplashClose} />
+      )}
       {/* Floating Minimal Controls Bar (Sin botón de subir archivo) */}
       <div className="canvas-top-bar" role="navigation" aria-label="Controles rápidos">
         <div className="canvas-brand" aria-label="compexi AI">
           <span className="brand-mark" aria-hidden>◈</span>
           <span className="brand-title">compexi</span>
-          <span className="brand-badge">Data &amp; Excel AI</span>
+          <span className="brand-badge">Excel + Power BI Booster</span>
         </div>
 
         <div className="canvas-actions">
+          <button type="button" className="btn btn-secondary small" onClick={() => setShowSplash(true)} aria-label="Cambiar potenciador">Cambiar potenciador</button>
           {hasData && (
             <div className="dataset-pill" title={fileInfo?.name ?? 'Dataset cargado'}>
               <i className="pixelart-icons-font-file" aria-hidden />
@@ -241,10 +262,10 @@ function DashboardContent() {
           {/* Top Stage: Animated Mascot + switch chibi */}
           <div className="mascot-stage">
             <Mascota
-              variant={mascotaVariant}
+              variant={effectiveVariant}
               mood={mascotaMood}
               size={180}
-              onClick={() => speak(hasData ? `Hola, tu archivo ${fileInfo?.name} está listo con ${fileInfo?.rows} filas. ¿Qué cálculo o gráfica deseas realizar?` : mascotaVariant === 'gryph' ? '¡Hola! Soy tu Grifo de cobre, analista cute. Arrastra tu Excel o CSV para comenzar.' : '¡Hola! Soy compe, tu robot analista. Arrastra tu archivo Excel o CSV para comenzar.')}
+              onClick={() => speak(hasData ? `Hola, tu archivo ${fileInfo?.name} está listo con ${fileInfo?.rows} filas. ¿Qué cálculo o gráfica deseas realizar?` : '¡Hola! Soy tu potenciador Excel/Power BI. Arrastra tu Excel sucio y lo dejo listo para Power BI.')}
             />
           </div>
           <div className="mascot-switch" role="group" aria-label="Cambiar mascota">
@@ -254,7 +275,31 @@ function DashboardContent() {
               aria-pressed={mascotaVariant === 'gryph'}
               onClick={() => setMascotaVariant('gryph')}
             >
-              <span aria-hidden>🦅</span> Grifo cobre
+              <span aria-hidden>🦅</span> Grifo
+            </button>
+            <button
+              type="button"
+              className={`mascot-switch-btn ${mascotaVariant === 'buho' ? 'active' : ''}`}
+              aria-pressed={mascotaVariant === 'buho'}
+              onClick={() => setMascotaVariant('buho')}
+            >
+              <span aria-hidden>🦉</span> Búho
+            </button>
+            <button
+              type="button"
+              className={`mascot-switch-btn ${mascotaVariant === 'fenix' ? 'active' : ''}`}
+              aria-pressed={mascotaVariant === 'fenix'}
+              onClick={() => setMascotaVariant('fenix')}
+            >
+              <span aria-hidden>🔥</span> Fénix
+            </button>
+            <button
+              type="button"
+              className={`mascot-switch-btn ${mascotaVariant === 'kitsune1' ? 'active' : ''}`}
+              aria-pressed={mascotaVariant === 'kitsune1'}
+              onClick={() => setMascotaVariant('kitsune1')}
+            >
+              <span aria-hidden>🦊</span> Kitsune
             </button>
             <button
               type="button"
@@ -266,7 +311,11 @@ function DashboardContent() {
             </button>
           </div>
           <div className="mascot-switch-hint" aria-live="polite">
-            {mascotaVariant === 'gryph' ? 'Chibi cute · cobre · alas mini' : 'Cyber-EVE · visor neón'}
+            {mascotaVariant === 'gryph' && 'Guardián · avisa ventas raras antes de Power BI'}
+            {mascotaVariant === 'buho' && 'Auditor Excel · encuentra vacíos y tipos mezclados'}
+            {mascotaVariant === 'fenix' && 'Power Query Booster · ordena tu Excel feo'}
+            {mascotaVariant === 'kitsune1' && 'Copiloto chat · pregúntale normal a tu Excel'}
+            {mascotaVariant === 'robot' && 'Reporter · genera informe trazable para PowerPoint'}
           </div>
 
           {/* Interactive Speech Bubble & Excel Chat & MiniCharts */}
@@ -279,6 +328,13 @@ function DashboardContent() {
             </div>
           )}
         </section>
+
+        {/* Excel → Power BI Booster banner — explica el plus vs Copilot */}
+        {hasData && (
+          <div style={{ marginTop: 8, background: '#fffaf5', border: '1px solid #e8b4a0', borderRadius: 12, padding: '10px 12px', fontSize: 12, lineHeight: 1.5 }} role="note">
+            <strong style={{ color: '#9c5a2e' }}>Excel → Power BI listo:</strong> Copilot escribe texto, Copixi <strong>verifica números</strong> (cálculo real, no inventa), limpia tu Excel sucio y deja la tabla lista para Power BI. Todo local, trazable. <span style={{ color: 'var(--color-muted)' }}>Elige tu potenciador arriba para cambiar el enfoque.</span>
+          </div>
+        )}
 
         {/* Optional Expandable Deep Analysis / Table / Recharts Dashboard */}
         {hasData && (
@@ -331,7 +387,7 @@ function DashboardContent() {
       </main>
 
       <footer className="canvas-footer" role="contentinfo">
-        <span>compexi · Analista de Excel con IA · Tus datos se procesan localmente en tu navegador</span>
+        <span>compexi · Booster Excel → Power BI · Cálculo real, 100% local, reporte reproducible · Tus datos no salen del navegador</span>
       </footer>
     </div>
   )

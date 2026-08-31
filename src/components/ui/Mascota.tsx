@@ -5,13 +5,15 @@ import type { MascotaMood } from '../../types/mascota'
 
 type Mood = MascotaMood
 
+type MascotVariant = 'gryph' | 'robot' | 'buho' | 'fenix' | 'kitsune1'
+
 interface MascotaProps {
   mood?: Mood
   subtitulo?: string
   size?: number
   onClick?: () => void
-  /** 'gryph' = El Grifo (default en main), 'robot' = backup Cyber-EVE (rama robot) */
-  variant?: 'gryph' | 'robot'
+  /** potenciador Excel/Power BI — todos molde robot redondo cobre */
+  variant?: MascotVariant
 }
 
 export function Mascota({ mood = 'neutro', subtitulo = '', size, onClick, variant = 'gryph' }: MascotaProps) {
@@ -69,9 +71,10 @@ export function Mascota({ mood = 'neutro', subtitulo = '', size, onClick, varian
 
   const effectiveMood = speakingState ? 'hablando' : localMood
   const moodClass = `mood-${effectiveMood}`
-  const variantClass = variant === 'robot' ? 'robot-eve' : 'gryph'
+  const isRobot = variant === 'robot'
+  const variantClass = isRobot ? 'robot-eve' : variant
 
-  if (variant === 'robot') {
+  if (isRobot) {
     return (
       <div
         id="mascota"
@@ -112,7 +115,13 @@ export function Mascota({ mood = 'neutro', subtitulo = '', size, onClick, varian
     )
   }
 
-  // ============ EL GRIFO (Gryphon) — CSS puro, sin imágenes ============
+  // ============ GRIFO / BÚHO / FÉNIX / KITSUNE — todos molde robot redondo cobre ============
+  const labelMap: Record<string, string> = {
+    gryph: 'Grifo',
+    buho: 'Búho',
+    fenix: 'Fénix',
+    kitsune1: 'Kitsune',
+  }
   return (
     <div
       id="mascota"
@@ -120,7 +129,7 @@ export function Mascota({ mood = 'neutro', subtitulo = '', size, onClick, varian
       className={`${variantClass} ${moodClass}`}
       onClick={onClick}
       style={size ? ({ ['--robot-size' as string]: `${size}px`, ['--gryph-size' as string]: `${size}px` } as React.CSSProperties) : undefined}
-      aria-label={`Grifo analista compe, estado: ${effectiveMood}`}
+      aria-label={`${labelMap[variant] ?? 'Grifo'} analista compe, estado: ${effectiveMood}`}
       role="img"
     >
       <div className="gryph-container">
