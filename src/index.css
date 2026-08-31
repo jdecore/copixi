@@ -61,6 +61,24 @@
   --robot-neon-soft: rgba(255, 107, 0, 0.25);
   --robot-accent: #ff8c2f;
 
+  /* gryphon El Grifo — águila + león, paleta cálida naranja/dorado */
+  --gryph-size: var(--robot-size);
+  --gryph-feather: #fff7ed;
+  --gryph-feather-mid: #ffedd5;
+  --gryph-feather-shadow: #fed7aa;
+  --gryph-mane: #ff8c2f;
+  --gryph-mane-deep: #ea580c;
+  --gryph-body: #fef3c7;
+  --gryph-body-shadow: #fde68a;
+  --gryph-body-outline: #d6a15a;
+  --gryph-beak: #f59e0b;
+  --gryph-beak-deep: #d97706;
+  --gryph-beak-light: #fde68a;
+  --gryph-eye: #ff6b00;
+  --gryph-eye-glow: rgba(255, 107, 0, 0.65);
+  --gryph-claw: #1e293b;
+  --gryph-nose: #92400e;
+
   color-scheme: light;
   font-family: var(--font-sans);
   line-height: 1.5;

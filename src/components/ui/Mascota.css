@@ -366,7 +366,563 @@
   .robot-shadow,
   .neon-eye,
   .core-light,
-  .robot-thruster-glow {
+  .robot-thruster-glow,
+  .gryph-container,
+  .gryph-shadow,
+  .gryph-wing,
+  .gryph-eye,
+  .gryph-glow {
     animation: none !important;
   }
 }
+
+/* ============================================================
+   EL GRIFO (Gryphon) — Águila + León, 100% CSS puro
+   Mantiene levitación, eye-tracking y moods del robot.
+   ============================================================ */
+
+#mascota.gryph {
+  --mouse-x: 0px;
+  --mouse-y: 0px;
+  --head-rot: 0deg;
+  --wing-tilt: 0deg;
+  width: var(--gryph-size, var(--robot-size, 200px));
+  height: var(--gryph-size, var(--robot-size, 200px));
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  filter: drop-shadow(0 0 0 transparent);
+}
+
+.gryph-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: levitacionSuave 4.5s ease-in-out infinite;
+}
+
+/* ---------- CABEZA ÁGUILA ---------- */
+.gryph-head {
+  width: 64%;
+  aspect-ratio: 1.1 / 1;
+  position: relative;
+  z-index: 12;
+  transform: rotate(var(--head-rot));
+  transition: transform 140ms ease-out;
+  filter: drop-shadow(0 8px 14px rgba(60, 30, 0, 0.14));
+}
+
+/* Orejas / penacho */
+.gryph-ear {
+  position: absolute;
+  top: 4%;
+  width: 22%;
+  height: 28%;
+  background: linear-gradient(180deg, var(--gryph-feather) 0%, var(--gryph-feather-mid) 100%);
+  border: 1.5px solid var(--gryph-body-outline);
+  z-index: 1;
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.9);
+}
+.gryph-ear.left {
+  left: 6%;
+  border-radius: 60% 40% 30% 70% / 70% 50% 30% 40%;
+  transform: rotate(-18deg);
+}
+.gryph-ear.right {
+  right: 6%;
+  border-radius: 40% 60% 70% 30% / 50% 70% 40% 30%;
+  transform: rotate(18deg);
+}
+.gryph-ear::after {
+  content: '';
+  position: absolute;
+  inset: 22% 28% 18% 28%;
+  background: var(--gryph-mane);
+  border-radius: 50%;
+  opacity: 0.95;
+}
+
+/* Cresta superior */
+.gryph-crest {
+  position: absolute;
+  top: -6%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 34%;
+  height: 18%;
+  background: linear-gradient(180deg, var(--gryph-mane) 0%, var(--gryph-mane-deep) 100%);
+  border-radius: 50% 50% 40% 40% / 80% 80% 30% 30%;
+  z-index: 0;
+  clip-path: polygon(10% 100%, 0 40%, 22% 0, 50% 18%, 78% 0, 100% 40%, 90% 100%);
+}
+
+.gryph-head-shell {
+  position: absolute;
+  inset: 8% 4% 4% 4%;
+  background: linear-gradient(170deg, #ffffff 0%, var(--gryph-feather) 55%, var(--gryph-feather-mid) 100%);
+  border-radius: 54% 54% 48% 48% / 58% 58% 44% 44%;
+  border: 2px solid var(--gryph-body-outline);
+  box-shadow:
+    inset -5px -6px 10px rgba(214, 161, 90, 0.45),
+    inset 5px 6px 10px rgba(255,255,255,0.98),
+    0 4px 12px rgba(0,0,0,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.gryph-head-gloss {
+  position: absolute;
+  top: 8%;
+  left: 16%;
+  width: 68%;
+  height: 22%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 100%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* ---------- OJOS ÁMBAR ---------- */
+.gryph-eye {
+  position: absolute;
+  top: 26%;
+  width: 22%;
+  aspect-ratio: 1 / 1.05;
+  background: radial-gradient(circle at 35% 30%, #fff7ed 0%, var(--gryph-eye) 38%, #ea580c 100%);
+  border: 2px solid var(--gryph-nose);
+  border-radius: 50%;
+  box-shadow:
+    0 0 6px var(--gryph-eye-glow),
+    0 0 14px rgba(255, 107, 0, 0.35),
+    inset 0 0 6px rgba(255,255,255,0.7);
+  overflow: hidden;
+  animation: gryphParpadeo 4.6s infinite;
+}
+.gryph-eye.left { left: 18%; }
+.gryph-eye.right { right: 18%; }
+
+.gryph-pupil {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 38%;
+  height: 58%;
+  background: #0a0a0a;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) translate(var(--mouse-x), var(--mouse-y));
+  transition: transform 80ms ease-out;
+  box-shadow: 0 0 4px rgba(0,0,0,0.6);
+}
+.gryph-pupil::after {
+  content: '';
+  position: absolute;
+  top: 18%;
+  left: 22%;
+  width: 36%;
+  height: 36%;
+  background: #ffffff;
+  border-radius: 50%;
+  opacity: 0.9;
+}
+.gryph-eye-highlight {
+  position: absolute;
+  top: 12%;
+  left: 18%;
+  width: 42%;
+  height: 26%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 100%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* ---------- PICO CURVO ---------- */
+.gryph-beak {
+  position: absolute;
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 46%;
+  height: 44%;
+  z-index: 4;
+  filter: drop-shadow(0 2px 4px rgba(60,30,0,0.18));
+}
+
+.beak-upper {
+  position: absolute;
+  inset: 0 0 34% 0;
+  background: linear-gradient(180deg, var(--gryph-beak-light) 0%, var(--gryph-beak) 45%, var(--gryph-beak-deep) 100%);
+  border: 1.5px solid var(--gryph-nose);
+  border-radius: 40% 40% 22% 22% / 70% 70% 30% 30%;
+  clip-path: polygon(50% 100%, 0 55%, 8% 18%, 50% 0, 92% 18%, 100% 55%);
+}
+.beak-upper::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18%;
+  height: 8px;
+  background: var(--gryph-nose);
+  border-radius: 0 0 50% 50%;
+  /* gancho del pico */
+  clip-path: polygon(0 0, 100% 0, 78% 100%, 22% 100%);
+}
+
+.beak-lower {
+  position: absolute;
+  bottom: 6%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 42%;
+  height: 26%;
+  background: linear-gradient(180deg, var(--gryph-beak-deep) 0%, #92400e 100%);
+  border: 1.5px solid var(--gryph-nose);
+  border-radius: 0 0 40% 40% / 0 0 100% 100%;
+  clip-path: polygon(12% 0, 88% 0, 70% 100%, 30% 100%);
+}
+
+.beak-nostril {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 7px;
+  height: 5px;
+  background: #451a03;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.6);
+}
+
+.beak-shine {
+  position: absolute;
+  top: 12%;
+  left: 18%;
+  width: 28%;
+  height: 18%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0) 100%);
+  border-radius: 50%;
+  transform: rotate(-18deg);
+  pointer-events: none;
+}
+
+.beak-audio-wave {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  gap: 2px;
+  height: 6px;
+}
+.beak-audio-wave .wave-bar {
+  width: 2px;
+  background: var(--gryph-eye);
+  border-radius: 1px;
+  box-shadow: 0 0 4px var(--gryph-eye-glow);
+  animation: visorWave 550ms ease-in-out infinite alternate;
+}
+.beak-audio-wave .wave-bar:nth-child(1) { height: 3px; }
+.beak-audio-wave .wave-bar:nth-child(2) { height: 6px; animation-delay: 110ms; }
+.beak-audio-wave .wave-bar:nth-child(3) { height: 4px; animation-delay: 200ms; }
+
+/* ---------- MELENA / COLLAR ---------- */
+.gryph-mane {
+  position: absolute;
+  bottom: -14%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 118%;
+  height: 32%;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+}
+.mane-lock {
+  flex: 1;
+  max-width: 26%;
+  background: linear-gradient(180deg, var(--gryph-feather) 0%, var(--gryph-feather-mid) 30%, var(--gryph-mane) 100%);
+  border: 1px solid var(--gryph-body-outline);
+  border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.8);
+}
+.mane-lock.l1 { transform: rotate(-14deg) translateY(2px); height: 88%; }
+.mane-lock.l2 { transform: rotate(-4deg); height: 100%; }
+.mane-lock.l3 { transform: rotate(4deg); height: 100%; }
+.mane-lock.l4 { transform: rotate(14deg) translateY(2px); height: 88%; }
+
+/* ---------- CUERPO LEÓN ---------- */
+.gryph-body {
+  width: 54%;
+  aspect-ratio: 1 / 1.15;
+  margin-top: -10%;
+  position: relative;
+  z-index: 5;
+  filter: drop-shadow(0 8px 12px rgba(60,30,0,0.1));
+}
+
+.gryph-body-shell {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(175deg, #ffffff 0%, var(--gryph-body) 55%, var(--gryph-body-shadow) 100%);
+  border-radius: 48% 48% 50% 50% / 34% 34% 66% 66%;
+  border: 2px solid var(--gryph-body-outline);
+  box-shadow:
+    inset -4px -6px 10px rgba(214,161,90,0.35),
+    inset 4px 6px 10px rgba(255,255,255,0.95);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gryph-chest-fluff {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 54%;
+  height: 42%;
+  background: radial-gradient(ellipse at 50% 30%, #ffffff 0%, var(--gryph-feather) 55%, var(--gryph-feather-mid) 100%);
+  border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+  border: 1px solid rgba(214,161,90,0.35);
+  box-shadow: inset 0 2px 6px rgba(255,255,255,0.9);
+}
+.gryph-chest-fluff::after {
+  content: '';
+  position: absolute;
+  bottom: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff7ed 0%, var(--gryph-eye) 45%, #ea580c 100%);
+  border: 1.5px solid var(--gryph-nose);
+  box-shadow: 0 0 6px var(--gryph-eye-glow);
+  animation: corePulse 2.6s infinite ease-in-out;
+}
+
+.gryph-belly-gloss {
+  position: absolute;
+  bottom: 14%;
+  left: 22%;
+  width: 56%;
+  height: 18%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 100%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Patas */
+.gryph-leg {
+  position: absolute;
+  width: 18%;
+  background: linear-gradient(180deg, var(--gryph-feather) 0%, var(--gryph-feather-mid) 100%);
+  border: 1.5px solid var(--gryph-body-outline);
+  box-shadow: 0 3px 6px rgba(60,30,0,0.08);
+}
+.gryph-leg.front {
+  top: 52%;
+  height: 44%;
+  border-radius: 12px 12px 10px 10px;
+  z-index: 2;
+}
+.gryph-leg.front.left { left: 12%; transform: rotate(3deg); }
+.gryph-leg.front.right { right: 12%; transform: rotate(-3deg); }
+.gryph-leg.front .claw {
+  position: absolute;
+  bottom: -4px;
+  width: 30%;
+  height: 10px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  clip-path: polygon(20% 0, 80% 0, 60% 100%, 40% 100%);
+}
+.gryph-leg.front .claw:nth-child(1) { left: 6%; transform: rotate(-8deg); }
+.gryph-leg.front .claw:nth-child(2) { left: 35%; }
+.gryph-leg.front .claw:nth-child(3) { right: 6%; transform: rotate(8deg); }
+
+.gryph-leg.hind {
+  bottom: 6%;
+  height: 30%;
+  width: 20%;
+  background: linear-gradient(180deg, var(--gryph-body) 0%, var(--gryph-body-shadow) 100%);
+  border-radius: 14px 14px 18px 18px;
+  z-index: 1;
+}
+.gryph-leg.hind.left { left: 8%; transform: rotate(6deg); }
+.gryph-leg.hind.right { right: 8%; transform: rotate(-6deg); }
+
+/* Cola león */
+.gryph-tail {
+  position: absolute;
+  top: 42%;
+  right: -14%;
+  width: 22%;
+  height: 38%;
+  background: linear-gradient(180deg, var(--gryph-body) 0%, var(--gryph-mane) 100%);
+  border: 1.5px solid var(--gryph-body-outline);
+  border-radius: 0 60% 60% 0 / 0 50% 50% 0;
+  transform: rotate(-22deg);
+  transform-origin: left center;
+  animation: tailSway 3.2s ease-in-out infinite;
+  z-index: 0;
+}
+.tail-tuft {
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  background: radial-gradient(circle at 30% 30%, var(--gryph-mane) 0%, var(--gryph-mane-deep) 100%);
+  border-radius: 50%;
+  border: 1px solid var(--gryph-nose);
+  box-shadow: 0 2px 6px rgba(60,30,0,0.18);
+}
+
+/* ---------- ALAS ---------- */
+.gryph-wing {
+  position: absolute;
+  top: 34%;
+  width: 38%;
+  height: 52%;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  transform-origin: top center;
+  transition: transform 280ms ease;
+  filter: drop-shadow(0 4px 8px rgba(60,30,0,0.1));
+}
+.gryph-wing.left {
+  left: -12%;
+  transform: rotate(18deg) rotateY(0deg) rotate(var(--wing-tilt));
+  animation: wingFlapLeft 3.4s ease-in-out infinite;
+}
+.gryph-wing.right {
+  right: -12%;
+  transform: rotate(-18deg) rotate(var(--wing-tilt));
+  animation: wingFlapRight 3.4s ease-in-out infinite;
+}
+
+.wing-feather {
+  flex: 1;
+  background: linear-gradient(180deg, #ffffff 0%, var(--gryph-feather) 40%, var(--gryph-feather-mid) 100%);
+  border: 1px solid var(--gryph-body-outline);
+  box-shadow: inset 0 1px 3px rgba(255,255,255,0.9);
+}
+.wing-feather.f1 {
+  border-radius: 70% 20% 0 70% / 50% 30% 0 50%;
+  margin-right: 18%;
+  transform: rotate(-4deg);
+}
+.wing-feather.f2 {
+  border-radius: 60% 18% 0 60% / 45% 28% 0 45%;
+  margin-right: 10%;
+  margin-top: -6%;
+  transform: rotate(-2deg);
+}
+.wing-feather.f3 {
+  border-radius: 55% 16% 0 55% / 42% 26% 0 42%;
+  margin-right: 4%;
+  margin-top: -6%;
+}
+
+/* Brillo / sombra levitación */
+.gryph-glow {
+  position: absolute;
+  bottom: 7%;
+  width: 34%;
+  height: 9%;
+  background: radial-gradient(ellipse, rgba(255,107,0,0.28) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: thrusterPulse 1.9s infinite alternate;
+}
+.gryph-shadow {
+  position: absolute;
+  bottom: 0;
+  width: 48%;
+  height: 10px;
+  background: radial-gradient(ellipse, rgba(0,0,0,0.14) 0%, transparent 75%);
+  border-radius: 50%;
+  animation: shadowScale 4.5s ease-in-out infinite;
+}
+
+/* ---------- ANIMACIONES GRYPH ---------- */
+@keyframes gryphParpadeo {
+  0%, 46%, 50%, 100% { transform: scaleY(1); }
+  48% { transform: scaleY(0.12); }
+}
+@keyframes tailSway {
+  0%, 100% { transform: rotate(-22deg); }
+  50% { transform: rotate(-12deg); }
+}
+@keyframes wingFlapLeft {
+  0%, 100% { transform: rotate(18deg) rotate(var(--wing-tilt)); }
+  50% { transform: rotate(14deg) rotate(var(--wing-tilt)); }
+}
+@keyframes wingFlapRight {
+  0%, 100% { transform: rotate(-18deg) rotate(var(--wing-tilt)); }
+  50% { transform: rotate(-14deg) rotate(var(--wing-tilt)); }
+}
+
+/* ---------- MOODS GRYPH ---------- */
+.gryph.mood-hablando .gryph-eye {
+  animation: none;
+  transform: scale(1.04);
+}
+.gryph.mood-hablando .beak-audio-wave { display: flex; }
+.gryph.mood-hablando .gryph-wing.left { transform: rotate(22deg) rotate(var(--wing-tilt)); }
+.gryph.mood-hablando .gryph-wing.right { transform: rotate(-22deg) rotate(var(--wing-tilt)); }
+.gryph.mood-hablando .beak-lower { transform: translateX(-50%) translateY(2px); }
+
+.gryph.mood-pensando .gryph-eye {
+  background: radial-gradient(circle at 50% 50%, #fff7ed 0%, var(--gryph-eye) 30%, #ea580c 100%);
+  animation: scanningOrbit 1.1s infinite linear;
+}
+.gryph.mood-pensando .gryph-pupil { opacity: 0.25; }
+
+.gryph.mood-feliz .gryph-eye,
+.gryph.mood-exito .gryph-eye {
+  transform: scaleY(0.88) scaleX(1.05);
+  border-radius: 50% 50% 30% 30% / 60% 60% 40% 40%;
+  box-shadow: 0 0 10px var(--gryph-eye-glow), 0 0 18px rgba(255,107,0,0.35);
+}
+.gryph.mood-exito .gryph-wing.left { transform: rotate(28deg) translateY(-4px) rotate(var(--wing-tilt)); }
+.gryph.mood-exito .gryph-wing.right { transform: rotate(-28deg) translateY(-4px) rotate(var(--wing-tilt)); }
+.gryph.mood-exito .gryph-tail { transform: rotate(-6deg); }
+
+.gryph.mood-duda .gryph-head { transform: rotate(7deg); }
+.gryph.mood-duda .gryph-eye.left { transform: scale(0.9); }
+.gryph.mood-duda .gryph-eye.right { transform: scale(1.08); }
+
+.gryph.mood-enojado .gryph-eye {
+  background: radial-gradient(circle at 35% 30%, #fecaca 0%, #ef4444 45%, #7f1d1d 100%);
+  box-shadow: 0 0 10px rgba(239,68,68,0.6);
+  border-color: #7f1d1d;
+  transform: rotate(10deg);
+}
+.gryph.mood-enojado .gryph-eye.right { transform: rotate(-10deg); }
+.gryph.mood-enojado .gryph-pupil { background: #450a0a; }
+.gryph.mood-enojado .gryph-body-shell { border-color: #fca5a5; }
+
+.gryph.mood-escuchando .gryph-eye {
+  transform: scale(1.08);
+  box-shadow: 0 0 12px var(--gryph-eye-glow), 0 0 20px rgba(255,107,0,0.4);
+}
+.gryph.mood-escuchando .gryph-ear { transform: rotate(-14deg) scale(1.05); }
+.gryph.mood-escuchando .gryph-ear.right { transform: rotate(14deg) scale(1.05); }
