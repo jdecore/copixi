@@ -124,12 +124,12 @@ export function Mascota({ mood = 'neutro', subtitulo = '', size, onClick, varian
       role="img"
     >
       <div className="gryph-container">
-        {/* Alas traseras — detrás del cuerpo */}
+        {/* Alas — águila, desplegadas a los lados (rasgo clave grifo) */}
         <div className="gryph-wing left" aria-hidden>
-          <span className="wing-feather f1" /><span className="wing-feather f2" /><span className="wing-feather f3" />
+          <span className="wing-feather f1" /><span className="wing-feather f2" /><span className="wing-feather f3" /><span className="wing-feather f4" />
         </div>
         <div className="gryph-wing right" aria-hidden>
-          <span className="wing-feather f1" /><span className="wing-feather f2" /><span className="wing-feather f3" />
+          <span className="wing-feather f1" /><span className="wing-feather f2" /><span className="wing-feather f3" /><span className="wing-feather f4" />
         </div>
 
         {/* Cuerpo león */}
@@ -158,7 +158,11 @@ export function Mascota({ mood = 'neutro', subtitulo = '', size, onClick, varian
           <div className="gryph-head-shell">
             <div className="gryph-head-gloss" aria-hidden />
 
-            {/* Ojos ámbar con pupila */}
+            {/* Cejas águila — ceño que hace que se lea como rapaz */}
+            <div className="gryph-brow left" aria-hidden />
+            <div className="gryph-brow right" aria-hidden />
+
+            {/* Ojos ámbar con pupila — grandes chibi pero con brillo rapaz */}
             <div className="gryph-eye left" aria-hidden>
               <div className="gryph-pupil" />
               <div className="gryph-eye-highlight" />
@@ -168,21 +172,23 @@ export function Mascota({ mood = 'neutro', subtitulo = '', size, onClick, varian
               <div className="gryph-eye-highlight" />
             </div>
 
-            {/* Pico curvo — superior + inferior + narina + brillo */}
+            {/* Pico gancho cobre — rasgo #1 de águila */}
             <div className="gryph-beak" aria-hidden>
+              <div className="beak-cere" />
               <div className="beak-upper" />
               <div className="beak-lower" />
               <div className="beak-nostril" />
               <div className="beak-shine" />
-              {/* onda de audio cuando habla — dentro del pico */}
+              <div className="beak-hook" />
+              {/* onda de audio cuando habla */}
               <div className="beak-audio-wave" aria-hidden>
                 <span className="wave-bar" /><span className="wave-bar" /><span className="wave-bar" />
               </div>
             </div>
 
-            {/* Melena / collar de plumas león */}
+            {/* Melena león — rasgo #1 de león, collar esponjoso cobre */}
             <div className="gryph-mane" aria-hidden>
-              <span className="mane-lock l1" /><span className="mane-lock l2" /><span className="mane-lock l3" /><span className="mane-lock l4" />
+              <span className="mane-lock l1" /><span className="mane-lock l2" /><span className="mane-lock l3" /><span className="mane-lock l4" /><span className="mane-lock l5" /><span className="mane-lock l6" />
             </div>
           </div>
         </div>
