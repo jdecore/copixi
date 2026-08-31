@@ -377,663 +377,107 @@
 }
 
 /* ============================================================
-   EL GRIFO (Gryphon) — MOLDE ROBOT REDONDO, cobre, 100% CSS
-   Reusa exactamente geometría del robot: 68% 1.25/1, 50% 50% 46%/55%
-   + visor 78%×64% + body 52% + arms 14%×55%. Solo reskin cobre.
+   CRIATURAS — MOLDE ROBOT (reusan robot-container etc, solo reskin)
+   Todas usan el mismo DOM que robot, solo cambian colores vía #mascota.<variant>
+   Robot intacto arriba no se toca. Sin clip-path complejo, solo border-radius.
    ============================================================ */
-
-#mascota.gryph {
+#mascota.gryph, #mascota.buho, #mascota.fenix, #mascota.kitsune1 {
   --mouse-x: 0px;
   --mouse-y: 0px;
   --head-rot: 0deg;
-  --wing-tilt: 0deg;
-  width: var(--gryph-size, var(--robot-size, 200px));
-  height: var(--gryph-size, var(--robot-size, 200px));
+  width: var(--robot-size, 200px);
+  height: var(--robot-size, 200px);
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   user-select: none;
-  filter: drop-shadow(0 0 0 transparent);
 }
-.gryph-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+#mascota.gryph .robot-container,
+#mascota.buho .robot-container,
+#mascota.fenix .robot-container,
+#mascota.kitsune1 .robot-container {
   animation: levitacionSuave 4.5s ease-in-out infinite;
 }
-
-/* ---------- CABEZA = robot-head ---------- */
-.gryph-head {
-  width: 68%;
-  aspect-ratio: 1.25 / 1;
-  position: relative;
-  z-index: 10;
-  transform: rotate(var(--head-rot));
-  transition: transform 140ms ease-out;
-  filter: drop-shadow(0 8px 14px rgba(92,58,30,0.14));
-}
-.gryph-head-shell {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(170deg, #fffdf8 0%, var(--gryph-feather) 55%, var(--gryph-feather-mid) 100%);
-  border-radius: 50% 50% 46% 46% / 55% 55% 45% 45%;
-  border: 2px solid var(--gryph-body-outline);
-  box-shadow:
-    inset -4px -6px 8px rgba(156,90,46,0.18),
-    inset 4px 6px 8px rgba(255,255,255,0.98),
-    0 4px 10px rgba(0,0,0,0.05);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-.gryph-head-gloss {
-  position: absolute;
-  top: 6%;
-  left: 15%;
-  width: 70%;
-  height: 25%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0) 100%);
-  border-radius: 50%;
-  pointer-events: none;
-}
-/* Orejas y cresta sutiles dentro de la esfera redonda */
-.gryph-ear {
+/* Extras criatura ocultos en robot */
+#mascota.robot-eve .creature-ears,
+#mascota.robot-eve .creature-crest,
+#mascota.robot-eve .creature-beak { display: none; }
+.creature-ears {
   position: absolute;
   top: 4%;
-  width: 14%;
-  height: 16%;
-  background: var(--gryph-feather-mid);
-  border: 1px solid var(--gryph-body-outline);
+  left: 8%;
+  right: 8%;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
   z-index: 2;
-  opacity: 0.95;
 }
-.gryph-ear.left { left: 10%; border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%; transform: rotate(-14deg); }
-.gryph-ear.right { right: 10%; border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%; transform: rotate(14deg); }
-.gryph-crest {
+.creature-ears span {
+  width: 16%;
+  height: 18px;
+  background: var(--gryph-feather-mid);
+  border: 1.2px solid var(--gryph-body-outline);
+  border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+}
+.creature-crest {
   position: absolute;
-  top: -1%;
+  top: -6%;
   left: 50%;
   transform: translateX(-50%);
-  width: 18%;
+  width: 20%;
   height: 10%;
   background: var(--gryph-mane);
   border-radius: 50% 50% 40% 40% / 70% 70% 30% 30%;
   z-index: 1;
-  opacity: 0.9;
 }
-.gryph-brow {
+.creature-beak {
   position: absolute;
-  top: 18%;
-  width: 28%;
-  height: 8%;
-  background: var(--gryph-mane-mid);
-  border: 1px solid var(--gryph-nose);
-  z-index: 5;
-  opacity: 0.95;
-}
-.gryph-brow.left { left: 12%; border-radius: 6px; transform: rotate(-16deg); }
-.gryph-brow.right { right: 12%; border-radius: 6px; transform: rotate(16deg); }
-
-/* Mejilla cobre sutil */
-.gryph-head-shell::after,
-.gryph-head-shell::before {
-  content: '';
-  position: absolute;
-  bottom: 24%;
-  width: 14%;
-  height: 8%;
-  background: radial-gradient(ellipse, var(--gryph-cheek) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 2;
-}
-.gryph-head-shell::after { left: 9%; }
-.gryph-head-shell::before { right: 9%; }
-
-/* ---------- CARA = robot-visor (78%×64% redondo) ---------- */
-.gryph-eye {
-  position: absolute;
-  top: 18%;
-  width: 24%;
-  aspect-ratio: 1 / 1;
-  background: radial-gradient(circle at 30% 26%, #fffaf0 0%, var(--gryph-eye-bright) 24%, var(--gryph-eye) 44%, var(--gryph-nose) 100%);
-  border: 1.8px solid var(--gryph-nose);
-  border-radius: 50%;
-  box-shadow: 0 0 6px var(--gryph-eye-glow), inset 0 0 6px rgba(255,255,255,0.4);
-  overflow: hidden;
-  animation: gryphParpadeo 5s infinite;
-  z-index: 6;
-}
-.gryph-eye.left { left: 14%; }
-.gryph-eye.right { right: 14%; }
-.gryph-pupil {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 42%;
-  height: 62%;
-  background: #1a0f08;
-  border-radius: 50%;
-  transform: translate(-50%, -50%) translate(var(--mouse-x), var(--mouse-y));
-  transition: transform 80ms ease-out;
-}
-.gryph-pupil::after {
-  content: '';
-  position: absolute;
-  top: 12%;
-  left: 16%;
-  width: 42%;
-  height: 42%;
-  background: #fff;
-  border-radius: 50%;
-  opacity: 0.96;
-}
-.gryph-eye-highlight {
-  position: absolute;
-  top: 8%;
-  left: 14%;
-  width: 40%;
-  height: 22%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, transparent 100%);
-  border-radius: 50%;
-  pointer-events: none;
-}
-.gryph-beak {
-  position: absolute;
-  bottom: 10%;
+  bottom: 12%;
   left: 50%;
   transform: translateX(-50%);
-  width: 34%;
-  height: 32%;
-  z-index: 7;
-  filter: drop-shadow(0 2px 3px rgba(61,43,31,0.18));
-}
-.beak-cere {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 70%;
-  height: 22%;
-  background: #fde6c8;
-  border: 1px solid var(--gryph-body-outline);
-  border-radius: 10px 10px 6px 6px;
-  z-index: 1;
-}
-.beak-upper {
-  position: absolute;
-  top: 8%;
-  left: 6%;
-  right: 6%;
-  height: 52%;
-  background: linear-gradient(180deg, var(--gryph-beak-light) 0%, var(--gryph-beak) 45%, var(--gryph-beak-deep) 100%);
-  border: 1.5px solid var(--gryph-nose);
-  border-radius: 40% 40% 20% 20% / 70% 70% 30% 30%;
-  z-index: 2;
-}
-.beak-hook {
-  position: absolute;
-  left: 50%;
-  bottom: 38%;
-  transform: translateX(-50%);
-  width: 20%;
-  height: 14%;
-  background: #5a2810;
-  border-radius: 0 0 8px 8px;
+  width: 26%;
+  height: 18%;
   z-index: 3;
+  display: grid;
+  place-items: center;
 }
-.beak-lower {
-  position: absolute;
-  bottom: 8%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 44%;
-  height: 22%;
-  background: #7a3b1a;
-  border: 1.3px solid var(--gryph-nose);
-  border-radius: 0 0 30% 30% / 0 0 80% 80%;
-  z-index: 2;
-}
-.beak-nostril {
-  position: absolute;
-  top: 22%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 5px;
-  height: 3px;
-  background: #2b1406;
-  border-radius: 50%;
-  z-index: 4;
-}
-.beak-shine {
-  position: absolute;
-  top: 16%;
-  left: 18%;
-  width: 24%;
-  height: 14%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, transparent 100%);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 5;
-}
-.beak-audio-wave {
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: none;
-  gap: 2px;
-  height: 6px;
-  z-index: 6;
-}
-.beak-audio-wave .wave-bar {
-  width: 2px;
-  background: var(--gryph-eye);
-  border-radius: 1px;
-  animation: visorWave 550ms ease-in-out infinite alternate;
-}
-.beak-audio-wave .wave-bar:nth-child(1) { height: 3px; }
-.beak-audio-wave .wave-bar:nth-child(2) { height: 6px; animation-delay: 110ms; }
-.beak-audio-wave .wave-bar:nth-child(3) { height: 4px; animation-delay: 200ms; }
-
-/* Melena sutil collar redondo (no picos) */
-.gryph-mane {
-  position: absolute;
-  bottom: -10%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 110%;
-  height: 22%;
-  z-index: 8;
-  display: flex;
-  justify-content: center;
-  gap: 2px;
-  pointer-events: none;
-}
-.mane-lock {
-  flex: 1;
-  max-width: 16%;
-  background: var(--gryph-mane);
-  border: 1px solid var(--gryph-body-outline);
-  border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
-  box-shadow: inset 0 2px 3px rgba(255,255,255,0.7);
-}
-.mane-lock.l1 { transform: rotate(-12deg) translateY(2px); height: 76%; }
-.mane-lock.l2 { transform: rotate(-6deg); height: 88%; }
-.mane-lock.l3 { transform: rotate(-1deg); height: 100%; }
-.mane-lock.l4 { transform: rotate(1deg); height: 100%; }
-.mane-lock.l5 { transform: rotate(6deg); height: 88%; }
-.mane-lock.l6 { transform: rotate(12deg) translateY(2px); height: 76%; }
-
-/* ---------- CUERPO = robot-body 52% 1/1.15 ---------- */
-.gryph-body {
-  width: 52%;
-  aspect-ratio: 1 / 1.15;
-  margin-top: -8%;
-  position: relative;
-  z-index: 5;
-  filter: drop-shadow(0 8px 12px rgba(92,58,30,0.10));
-}
-.gryph-body-shell {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(175deg, #fffdf8 0%, var(--gryph-body) 55%, var(--gryph-body-shadow) 100%);
-  border-radius: 46% 46% 50% 50% / 35% 35% 65% 65%;
-  border: 2px solid var(--gryph-body-outline);
-  box-shadow:
-    inset -4px -6px 8px rgba(156,90,46,0.18),
-    inset 4px 6px 8px rgba(255,255,255,0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-.gryph-chest-fluff {
-  position: absolute;
-  top: 18%;
-  left: 50%;
-  transform: translateX(-50%);
+.creature-beak .beak-tip {
   width: 56%;
-  height: 36%;
-  background: radial-gradient(ellipse at 50% 26%, #fff 0%, var(--gryph-feather) 55%, var(--gryph-feather-mid) 100%);
-  border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
-  border: 1px solid rgba(156,90,46,0.12);
+  height: 68%;
+  background: linear-gradient(180deg, var(--gryph-beak-light) 0%, var(--gryph-beak) 50%, var(--gryph-beak-deep) 100%);
+  border: 1.2px solid var(--gryph-nose);
+  border-radius: 40% 40% 30% 30% / 60% 60% 40% 40%;
 }
-.gryph-chest-fluff::after {
-  content: '';
-  position: absolute;
-  bottom: 14%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--gryph-eye);
-  border: 1.5px solid var(--gryph-nose);
-  box-shadow: 0 0 6px var(--gryph-eye-glow);
-  animation: corePulse 2.6s infinite ease-in-out;
-}
-.gryph-belly-gloss {
-  position: absolute;
-  bottom: 14%;
-  left: 22%;
-  width: 56%;
-  height: 18%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, transparent 100%);
-  border-radius: 50%;
-  pointer-events: none;
-}
-/* Patas = robot-arm 14%×55% */
-.gryph-leg {
-  position: absolute;
-  border: 1.5px solid var(--gryph-body-outline);
-}
-.gryph-leg.front {
-  top: 15%;
-  width: 14%;
-  height: 55%;
-  background: linear-gradient(180deg, #fde6c8 0%, var(--gryph-beak) 100%);
-  border-radius: 12px;
-  z-index: 2;
-}
-.gryph-leg.front.left { left: -8%; transform: rotate(8deg); }
-.gryph-leg.front.right { right: -8%; transform: rotate(-8deg); }
-.gryph-leg.front .claw {
-  position: absolute;
-  bottom: -4px;
-  width: 28%;
-  height: 8px;
-  background: #1a0f08;
-  border-radius: 0 0 50% 50% / 0 0 100% 100%;
-}
-.gryph-leg.front .claw:nth-child(1) { left: 8%; transform: rotate(-8deg); }
-.gryph-leg.front .claw:nth-child(2) { left: 36%; }
-.gryph-leg.front .claw:nth-child(3) { right: 8%; transform: rotate(8deg); }
-.gryph-leg.hind {
-  bottom: 6%;
-  width: 14%;
-  height: 32%;
-  background: var(--gryph-body);
-  border-radius: 12px;
-  z-index: 1;
-}
-.gryph-leg.hind.left { left: 4%; }
-.gryph-leg.hind.right { right: 4%; }
-.gryph-tail {
-  position: absolute;
-  top: 42%;
-  right: -10%;
-  width: 16%;
-  height: 28%;
-  background: var(--gryph-mane);
-  border: 1.5px solid var(--gryph-body-outline);
-  border-radius: 0 50% 50% 0 / 0 50% 50% 0;
-  transform: rotate(-18deg);
-  transform-origin: left center;
-  animation: tailSway 2.8s ease-in-out infinite;
-  z-index: 0;
-}
-.tail-tuft {
-  position: absolute;
-  right: -4px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 14px;
-  height: 14px;
-  background: var(--gryph-mane-deep);
-  border-radius: 50%;
-  border: 1px solid var(--gryph-nose);
-}
+/* Reskin cobre por variante — misma forma redonda que robot */
+#mascota.gryph .robot-head-shell { background: linear-gradient(170deg, #fffdf8 0%, var(--gryph-feather) 55%, var(--gryph-feather-mid) 100%); border-color: var(--gryph-body-outline); }
+#mascota.gryph .robot-visor { background: radial-gradient(circle at 50% 40%, #fffaf0 0%, #fde6d0 100%); border-color: var(--gryph-body-outline); }
+#mascota.gryph .neon-eye { background: var(--gryph-eye); border-color: var(--gryph-nose); box-shadow: 0 0 0 2px rgba(245,214,191,0.8), 0 0 8px var(--gryph-eye-glow); }
+#mascota.gryph .robot-body-shell { background: linear-gradient(175deg, #fffdf8 0%, var(--gryph-body) 55%, var(--gryph-body-shadow) 100%); border-color: var(--gryph-body-outline); }
+#mascota.gryph .robot-arm { background: linear-gradient(180deg, #fff 0%, var(--gryph-feather-mid) 100%); border-color: var(--gryph-body-outline); }
+#mascota.gryph .core-light { background: var(--gryph-eye); box-shadow: 0 0 8px var(--gryph-eye-glow); }
+#mascota.gryph .robot-thruster-glow { background: radial-gradient(ellipse, rgba(184,115,51,0.22) 0%, transparent 70%); }
 
-/* ---------- ALAS = robot-arm plegadas ---------- */
-.gryph-wing {
-  position: absolute;
-  top: 15%;
-  width: 14%;
-  height: 55%;
-  z-index: 4;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  transform-origin: top center;
-  transition: transform 280ms ease;
-}
-.gryph-wing.left {
-  left: -8%;
-  transform: rotate(8deg) rotate(var(--wing-tilt));
-  animation: wingFlapLeft 2.4s ease-in-out infinite;
-}
-.gryph-wing.right {
-  right: -8%;
-  transform: rotate(-8deg) rotate(var(--wing-tilt)) scaleX(-1);
-  animation: wingFlapRight 2.4s ease-in-out infinite;
-}
-.wing-feather {
-  flex: 1;
-  background: linear-gradient(180deg, #fff 0%, var(--gryph-feather-mid) 100%);
-  border: 1px solid var(--gryph-body-outline);
-  box-shadow: inset 0 1px 2px rgba(255,255,255,0.9);
-}
-.wing-feather.f1 { border-radius: 12px 12px 4px 4px; margin-right: 10%; }
-.wing-feather.f2 { border-radius: 8px; margin-right: 6%; margin-top: -4%; }
-.wing-feather.f3 { border-radius: 8px; margin-right: 3%; margin-top: -4%; }
-.wing-feather.f4 { background: var(--gryph-mane-deep); border-radius: 8px; margin-top: -4%; }
+#mascota.buho .robot-head-shell { background: linear-gradient(170deg, #fff 0%, #fff7ed 55%, #f5d6bf 100%); border-color: #9c5a2e; }
+#mascota.buho .robot-visor { background: radial-gradient(circle at 50% 40%, #fff 0%, #f5d6bf 100%); border-color: #9c5a2e; }
+#mascota.buho .neon-eye { width: 36%; background: radial-gradient(circle at 30% 26%, #fff 0%, #f5d6bf 28%, #d4926b 44%, #9c5a2e 100%); border-width: 2.2px; box-shadow: 0 0 0 3px rgba(245,214,191,0.9), 0 0 8px var(--gryph-eye-glow); }
+#mascota.buho .creature-beak .beak-tip { width: 42%; height: 52%; background: #e8a04a; }
+#mascota.buho .robot-body-shell { background: linear-gradient(175deg, #fff 0%, #f5d6bf 55%, #e8b4a0 100%); border-color: #9c5a2e; }
 
-/* Brillo / sombra = robot-thruster */
-.gryph-glow {
-  position: absolute;
-  bottom: 6%;
-  width: 32%;
-  height: 8%;
-  background: radial-gradient(ellipse, rgba(184,115,51,0.22) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
-  animation: thrusterPulse 1.9s infinite alternate;
-}
-.gryph-shadow {
-  position: absolute;
-  bottom: 0;
-  width: 48%;
-  height: 10px;
-  background: radial-gradient(ellipse, rgba(0,0,0,0.14) 0%, transparent 75%);
-  border-radius: 50%;
-  animation: shadowScale 4.5s ease-in-out infinite;
-}
+#mascota.fenix .robot-head-shell { background: linear-gradient(170deg, #fff 0%, #ffedd5 55%, #fed7aa 100%); border-color: #c2410c; }
+#mascota.fenix .robot-visor { background: radial-gradient(circle at 50% 40%, #fff 0%, #ffedd5 100%); border-color: #c2410c; }
+#mascota.fenix .neon-eye { background: radial-gradient(circle at 30% 26%, #fff 0%, #ff8c2f 28%, #c2410c 100%); border-color: #7f1d1d; }
+#mascota.fenix .creature-crest { background: linear-gradient(180deg, #ff8c2f 0%, #c2410c 70%, #7f1d1d 100%); height: 14%; width: 22%; }
+#mascota.fenix .creature-beak .beak-tip { background: linear-gradient(180deg, #ffedd5 0%, #ff8c2f 50%, #c2410c 100%); }
+#mascota.fenix .robot-body-shell { background: linear-gradient(175deg, #fff 0%, #ffedd5 55%, #fdba74 100%); border-color: #c2410c; }
+#mascota.fenix .robot-thruster-glow { background: radial-gradient(ellipse, rgba(194,65,12,0.28) 0%, transparent 70%); }
+#mascota.fenix .core-light { background: #ff8c2f; }
 
-/* ---------- ANIMACIONES (mismas que robot) ---------- */
-@keyframes gryphParpadeo {
-  0%, 46%, 50%, 100% { transform: scaleY(1); }
-  48% { transform: scaleY(0.12); }
-}
-@keyframes tailSway {
-  0%, 100% { transform: rotate(-18deg); }
-  50% { transform: rotate(-12deg); }
-}
-@keyframes wingFlapLeft {
-  0%, 100% { transform: rotate(8deg) rotate(var(--wing-tilt)); }
-  50% { transform: rotate(4deg) rotate(var(--wing-tilt)); }
-}
-@keyframes wingFlapRight {
-  0%, 100% { transform: rotate(-8deg) rotate(var(--wing-tilt)) scaleX(-1); }
-  50% { transform: rotate(-4deg) rotate(var(--wing-tilt)) scaleX(-1); }
-}
-
-/* ---------- MOODS (copia robot, cobre) ---------- */
-.gryph.mood-hablando .gryph-eye,
-.buho.mood-hablando .gryph-eye,
-.fenix.mood-hablando .gryph-eye,
-.kitsune1.mood-hablando .gryph-eye { transform: scale(1.04); }
-.gryph.mood-hablando .beak-audio-wave,
-.buho.mood-hablando .beak-audio-wave,
-.fenix.mood-hablando .beak-audio-wave,
-.kitsune1.mood-hablando .beak-audio-wave { display: flex; }
-.gryph.mood-hablando .gryph-wing.left,
-.buho.mood-hablando .gryph-wing.left,
-.fenix.mood-hablando .gryph-wing.left,
-.kitsune1.mood-hablando .gryph-wing.left { transform: rotate(12deg) rotate(var(--wing-tilt)); }
-.gryph.mood-hablando .gryph-wing.right,
-.buho.mood-hablando .gryph-wing.right,
-.fenix.mood-hablando .gryph-wing.right,
-.kitsune1.mood-hablando .gryph-wing.right { transform: rotate(-12deg) rotate(var(--wing-tilt)) scaleX(-1); }
-.gryph.mood-pensando .gryph-eye,
-.buho.mood-pensando .gryph-eye,
-.fenix.mood-pensando .gryph-eye,
-.kitsune1.mood-pensando .gryph-eye { animation: scanningOrbit 1.1s infinite linear; }
-.gryph.mood-pensando .gryph-pupil,
-.buho.mood-pensando .gryph-pupil,
-.fenix.mood-pensando .gryph-pupil,
-.kitsune1.mood-pensando .gryph-pupil { opacity: 0.25; }
-.gryph.mood-feliz .gryph-eye,
-.buho.mood-feliz .gryph-eye,
-.fenix.mood-feliz .gryph-eye,
-.kitsune1.mood-feliz .gryph-eye,
-.gryph.mood-exito .gryph-eye,
-.buho.mood-exito .gryph-eye,
-.fenix.mood-exito .gryph-eye,
-.kitsune1.mood-exito .gryph-eye { transform: scaleY(0.92); }
-.gryph.mood-exito .gryph-wing.left,
-.buho.mood-exito .gryph-wing.left,
-.fenix.mood-exito .gryph-wing.left,
-.kitsune1.mood-exito .gryph-wing.left { transform: rotate(-12deg) translateY(-4px); }
-.gryph.mood-exito .gryph-wing.right,
-.buho.mood-exito .gryph-wing.right,
-.fenix.mood-exito .gryph-wing.right,
-.kitsune1.mood-exito .gryph-wing.right { transform: rotate(12deg) translateY(-4px) scaleX(-1); }
-.gryph.mood-duda .gryph-head,
-.buho.mood-duda .gryph-head,
-.fenix.mood-duda .gryph-head,
-.kitsune1.mood-duda .gryph-head { transform: rotate(6deg); }
-.gryph.mood-enojado .gryph-eye,
-.buho.mood-enojado .gryph-eye,
-.fenix.mood-enojado .gryph-eye,
-.kitsune1.mood-enojado .gryph-eye { background: #ef4444; border-color: #7f1d1d; }
-.gryph.mood-escuchando .gryph-eye,
-.buho.mood-escuchando .gryph-eye,
-.fenix.mood-escuchando .gryph-eye,
-.kitsune1.mood-escuchando .gryph-eye { transform: scale(1.06); }
-
-/* ---------- VARIANTES — base redonda compartida (garantiza verse bien como robot) ---------- */
-#mascota.buho,
-#mascota.fenix,
-#mascota.kitsune1 {
-  --mouse-x: 0px;
-  --mouse-y: 0px;
-  --head-rot: 0deg;
-  --wing-tilt: 0deg;
-  width: var(--gryph-size, var(--robot-size, 200px));
-  height: var(--gryph-size, var(--robot-size, 200px));
-}
-
-/* ========== 1) BÚHO ATENEA — Auditor Excel (iteración 1) ==========
-   Ojos grandes con disco facial, pico piquito triangular, plumón claro.
-   Mantiene molde redondo: solo cambia ojos/brows/beak/mane sutil. */
-#mascota.buho .gryph-eye {
-  width: 30%;
-  background: radial-gradient(circle at 30% 26%, #fffaf0 0%, #f5d6bf 28%, #d4926b 44%, #9c5a2e 100%);
-  border-width: 2.2px;
-  box-shadow: 0 0 0 3px rgba(245,214,191,0.9), 0 0 8px var(--gryph-eye-glow), inset 0 0 6px rgba(255,255,255,0.5);
-}
-#mascota.buho .gryph-pupil { width: 38%; height: 58%; }
-#mascota.buho .gryph-brow {
-  background: #e8b4a0;
-  opacity: 0.45;
-  height: 5%;
-  top: 15%;
-  border-color: #9c5a2e;
-}
-#mascota.buho .gryph-beak { width: 16%; height: 16%; bottom: 14%; }
-#mascota.buho .beak-upper {
-  background: linear-gradient(180deg, #fde6c8 0%, #e8a04a 100%);
-  border-radius: 50% 50% 40% 40% / 55% 55% 45% 45%;
-}
-#mascota.buho .beak-lower { width: 50%; height: 26%; background: #c0843a; }
-#mascota.buho .mane-lock { background: linear-gradient(180deg, #fff 0%, #f5d6bf 60%, #e8b4a0 100%); border-color: #d4926b; }
-#mascota.buho .gryph-head-shell { background: linear-gradient(170deg, #fff 0%, #fff7ed 55%, #f5d6bf 100%); }
-
-/* ========== 2) FÉNIX BENNU — Transformer Power Query (iteración 2) ==========
-   Cresta flame, ojos brasa, pico fino rojizo, melena/cola flame. */
-#mascota.fenix .gryph-crest {
-  background: linear-gradient(180deg, #ffedd5 0%, #ff8c2f 35%, #c2410c 70%, #7f1d1d 100%);
-  width: 30%;
-  height: 18%;
-  border-radius: 50% 50% 40% 40% / 80% 80% 30% 30%;
-  clip-path: polygon(50% 0, 68% 28%, 82% 12%, 84% 42%, 100% 58%, 78% 78%, 62% 62%, 50% 88%, 38% 62%, 22% 78%, 0 58%, 16% 42%, 18% 12%, 32% 28%);
-}
-#mascota.fenix .gryph-eye {
-  background: radial-gradient(circle at 30% 26%, #fffaf0 0%, #ff8c2f 26%, #c2410c 48%, #7a1212 100%);
-  border-color: #9a1212;
-}
-#mascota.fenix .gryph-brow { background: linear-gradient(180deg, #ff8c2f, #7f1d1d); opacity: 0.85; }
-#mascota.fenix .beak-upper { background: linear-gradient(180deg, #ffedd5 0%, #ff8c2f 45%, #c2410c 100%); }
-#mascota.fenix .beak-lower { background: #9a1212; }
-#mascota.fenix .mane-lock { background: linear-gradient(180deg, #fff 0%, #ffedd5 30%, #ff8c2f 55%, #c2410c 85%); border-color: #9a1212; }
-#mascota.fenix .gryph-tail {
-  background: linear-gradient(180deg, #ffedd5 0%, #ff8c2f 40%, #c2410c 75%, #7f1d1d 100%);
-  border-color: #9a1212;
-}
-#mascota.fenix .tail-tuft { background: radial-gradient(circle at 30% 30%, #ff8c2f 0%, #7f1d1d 100%); border-color: #9a1212; }
-#mascota.fenix .gryph-head-shell { background: linear-gradient(170deg, #fff 0%, #ffedd5 55%, #fed7aa 100%); border-color: #c2410c; }
-
-/* ========== 3) KITSUNE 1-COLA — Explorer Copilot (iteración 3) ==========
-   Orejas puntiagudas altas, ojos avellanados, cola esponjosa blanca-cobre. */
-#mascota.kitsune1 .gryph-ear {
-  width: 18%;
-  height: 28%;
-  background: linear-gradient(180deg, #fff 0%, #f5d6bf 45%, #d4926b 75%, #fff 100%);
-  border-radius: 60% 60% 20% 20% / 70% 70% 30% 30%;
-  transform: rotate(-12deg);
-  border-color: #9c5a2e;
-}
-#mascota.kitsune1 .gryph-ear.right { transform: rotate(12deg); }
-#mascota.kitsune1 .gryph-ear::after { inset: 30% 20% 16% 20%; background: #fff7ed; border: 1px solid #e8b4a0; }
-#mascota.kitsune1 .gryph-eye {
-  width: 24%;
-  border-radius: 52% 52% 48% 48% / 60% 60% 40% 40%;
-  background: radial-gradient(circle at 30% 26%, #fffaf0 0%, #f5d6bf 26%, #d4926b 48%, #7a3b1a 100%);
-  transform: rotate(-2deg);
-}
-#mascota.kitsune1 .gryph-eye.right { transform: rotate(2deg); }
-#mascota.kitsune1 .gryph-brow { background: #d4926b; height: 4%; top: 17%; opacity: 0.5; }
-#mascota.kitsune1 .gryph-beak { width: 14%; height: 14%; background: #1a0f08; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; }
-#mascota.kitsune1 .gryph-beak .beak-upper,
-#mascota.kitsune1 .gryph-beak .beak-cere,
-#mascota.kitsune1 .gryph-beak .beak-hook,
-#mascota.kitsune1 .gryph-beak .beak-nostril,
-#mascota.kitsune1 .gryph-beak .beak-shine { display: none; }
-#mascota.kitsune1 .beak-lower {
-  width: 60%;
-  height: 40%;
-  background: #1a0f08;
-  border-radius: 50%;
-  bottom: 30%;
-  border: 1px solid #3d1f0a;
-}
-#mascota.kitsune1 .gryph-tail {
-  width: 24%;
-  height: 34%;
-  background: linear-gradient(180deg, #fff 0%, #f5d6bf 35%, #d4926b 65%, #fff 100%);
-  border-radius: 0 60% 60% 0 / 0 50% 50% 0;
-  border-color: #9c5a2e;
-  right: -12%;
-}
-#mascota.kitsune1 .tail-tuft {
-  width: 20px;
-  height: 20px;
-  background: radial-gradient(circle at 30% 30%, #fff 0%, #f5d6bf 60%, #d4926b 100%);
-  border-color: #9c5a2e;
-  box-shadow: 0 0 0 3px rgba(245,214,191,0.6);
-}
-#mascota.kitsune1 .mane-lock { background: linear-gradient(180deg, #fff 0%, #f5d6bf 60%, #fff 100%); border-color: #e8b4a0; }
-#mascota.kitsune1 .gryph-head-shell { background: linear-gradient(170deg, #fff 0%, #fff7ed 55%, #fde6d0 100%); }
-
-/* ========== 4) GRIFO — Guardián (refinado cobre, ya redondo) ========== */
-#mascota.gryph .gryph-head-shell { border-color: #9c5a2e; box-shadow: inset -4px -6px 8px rgba(156,90,46,0.20), inset 4px 6px 8px rgba(255,255,255,0.98), 0 4px 10px rgba(0,0,0,0.06), 0 0 0 2px rgba(184,115,51,0.08); }
-#mascota.gryph .gryph-eye { box-shadow: 0 0 0 2px rgba(245,214,191,0.8), 0 0 10px var(--gryph-eye-glow); }
-#mascota.gryph .gryph-crest { opacity: 1; }
+#mascota.kitsune1 .robot-head-shell { background: linear-gradient(170deg, #fff 0%, #fff7ed 55%, #fde6d0 100%); border-color: #9c5a2e; }
+#mascota.kitsune1 .creature-ears span { height: 22px; border-radius: 60% 60% 20% 20% / 70% 70% 30% 30%; }
+#mascota.kitsune1 .neon-eye { border-radius: 48% / 60%; background: radial-gradient(circle at 30% 26%, #fffaf0 0%, #f5d6bf 28%, #d4926b 100%); }
+#mascota.kitsune1 .creature-beak { width: 14%; height: 14%; background: #1a0f08; border-radius: 50%; bottom: 16%; }
+#mascota.kitsune1 .creature-beak .beak-tip { display: none; }
+#mascota.kitsune1 .robot-body-shell { background: linear-gradient(175deg, #fff 0%, #f5d6bf 55%, #fff 100%); border-color: #9c5a2e; }
+#mascota.kitsune1 .robot-thruster-glow { background: radial-gradient(ellipse, rgba(245,214,191,0.5) 0%, transparent 70%); }
