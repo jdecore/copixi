@@ -91,7 +91,14 @@ function DashboardContent() {
   const [dragging, setDragging] = useState(false)
   const [mascotaMood, setMascotaMood] = useState<MascotaMood>('neutro')
   const [dataOpen, setDataOpen] = useState(true)
+  const [mascotaVariant, setMascotaVariant] = useState<'gryph' | 'robot'>(() => {
+    try { const v = localStorage.getItem('copixi:mascota-variant'); return v === 'robot' ? 'robot' : 'gryph' } catch { return 'gryph' }
+  })
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    try { localStorage.setItem('copixi:mascota-variant', mascotaVariant) } catch {}
+  }, [mascotaVariant])
 
   const hasData = !!rawRows
 
@@ -231,13 +238,35 @@ function DashboardContent() {
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
         >
-          {/* Top Stage: Animated Mascot */}
+          {/* Top Stage: Animated Mascot + switch chibi */}
           <div className="mascot-stage">
             <Mascota
+              variant={mascotaVariant}
               mood={mascotaMood}
               size={180}
-              onClick={() => speak(hasData ? `Hola, tu archivo ${fileInfo?.name} está listo con ${fileInfo?.rows} filas. ¿Qué cálculo o gráfica deseas realizar?` : '¡Hola! Soy compe, tu robot analista. Arrastra tu archivo Excel o CSV para comenzar.')}
+              onClick={() => speak(hasData ? `Hola, tu archivo ${fileInfo?.name} está listo con ${fileInfo?.rows} filas. ¿Qué cálculo o gráfica deseas realizar?` : mascotaVariant === 'gryph' ? '¡Hola! Soy tu Grifo de cobre, analista cute. Arrastra tu Excel o CSV para comenzar.' : '¡Hola! Soy compe, tu robot analista. Arrastra tu archivo Excel o CSV para comenzar.')}
             />
+          </div>
+          <div className="mascot-switch" role="group" aria-label="Cambiar mascota">
+            <button
+              type="button"
+              className={`mascot-switch-btn ${mascotaVariant === 'gryph' ? 'active' : ''}`}
+              aria-pressed={mascotaVariant === 'gryph'}
+              onClick={() => setMascotaVariant('gryph')}
+            >
+              <span aria-hidden>🦅</span> Grifo cobre
+            </button>
+            <button
+              type="button"
+              className={`mascot-switch-btn ${mascotaVariant === 'robot' ? 'active' : ''}`}
+              aria-pressed={mascotaVariant === 'robot'}
+              onClick={() => setMascotaVariant('robot')}
+            >
+              <span aria-hidden>🤖</span> Robot
+            </button>
+          </div>
+          <div className="mascot-switch-hint" aria-live="polite">
+            {mascotaVariant === 'gryph' ? 'Chibi cute · cobre · alas mini' : 'Cyber-EVE · visor neón'}
           </div>
 
           {/* Interactive Speech Bubble & Excel Chat & MiniCharts */}

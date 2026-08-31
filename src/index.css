@@ -77,23 +77,26 @@
   --robot-neon-soft: rgba(255, 107, 0, 0.25);
   --robot-accent: #ff8c2f;
 
-  /* gryphon El Grifo — águila + león, paleta cálida naranja/dorado */
+  /* gryphon El Grifo chibi cute — paleta cobre (copper) */
   --gryph-size: var(--robot-size);
   --gryph-feather: #fff7ed;
-  --gryph-feather-mid: #ffedd5;
-  --gryph-feather-shadow: #fed7aa;
-  --gryph-mane: #ff8c2f;
-  --gryph-mane-deep: #ea580c;
-  --gryph-body: #fef3c7;
-  --gryph-body-shadow: #fde68a;
-  --gryph-body-outline: #d6a15a;
-  --gryph-beak: #f59e0b;
-  --gryph-beak-deep: #d97706;
-  --gryph-beak-light: #fde68a;
-  --gryph-eye: #ff6b00;
-  --gryph-eye-glow: rgba(255, 107, 0, 0.65);
-  --gryph-claw: #1e293b;
-  --gryph-nose: #92400e;
+  --gryph-feather-mid: #fde6d0;
+  --gryph-feather-shadow: #e8b4a0;
+  --gryph-mane: #d4926b;        /* cobre claro */
+  --gryph-mane-deep: #a05a2c;   /* cobre oscuro */
+  --gryph-mane-mid: #cb7a4a;    /* cobre medio */
+  --gryph-body: #f5d6bf;
+  --gryph-body-shadow: #dca88e;
+  --gryph-body-outline: #9c5a2e; /* borde cobre tostado */
+  --gryph-beak: #e8a04a;        /* pico cobre dorado */
+  --gryph-beak-deep: #b87333;   /* cobre puro */
+  --gryph-beak-light: #fde6c8;
+  --gryph-eye: #b87333;         /* iris cobre */
+  --gryph-eye-bright: #d4926b;
+  --gryph-eye-glow: rgba(184, 115, 51, 0.55);
+  --gryph-cheek: rgba(212, 146, 107, 0.35);
+  --gryph-claw: #3d2b1f;
+  --gryph-nose: #7a3b1a;
 
   color-scheme: light;
   font-family: var(--font-sans);
