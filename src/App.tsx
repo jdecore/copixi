@@ -5,20 +5,19 @@ import { parseCSV } from './data/parser'
 import { parseAnyFile, validateAnyFile } from './data/universalParser'
 import { DashboardProvider, useDashboard } from './state/DashboardContext'
 import { ChartCard } from './components/dashboard/ChartCard'
-import { SummaryCard } from './components/dashboard/SummaryCard'
 import { FilterBar } from './components/dashboard/FilterBar'
 import { ExportBar } from './components/dashboard/ExportBar'
 import { DataTable } from './components/data/DataTable'
 import { DataProfiler } from './components/data/DataProfiler'
 import { Mascota } from './components/ui/Mascota'
 import { ExcelChat } from './components/excel/ExcelChat'
-import { BootSplash, type SplashAgent } from './components/splash/BootSplash'
+import { RobotEcosystemControls } from './components/dashboard/RobotEcosystemControls'
 import { speak } from './lib/tts'
-import type { SavedAnalysis } from './lib/storage'
 import { saveDataset } from './lib/storage'
 import type { MascotaMood } from './types/mascota'
+import { ROBOT_UNITS } from './types/mascota'
 
-const CHART_COLORS = ['#ff6b00', '#166534', '#0a0a0a', '#c27803', '#64748b', '#0e9f6e', '#ff8c2f', '#1f2937']
+const CHART_COLORS = ['#ff6b00', '#10b981', '#2563eb', '#8b5cf6', '#f59e0b', '#f43f5e', '#6366f1', '#64748b']
 
 function ChartRenderer({ config, data, height = 260 }: { config: { chartType: string; x: string; y: string; title?: string }; data: { name: string; value: number }[] | { x: number; y: number }[]; height?: number }) {
   if (config.chartType === 'pie') {
@@ -56,7 +55,7 @@ function ChartRenderer({ config, data, height = 260 }: { config: { chartType: st
           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
           <YAxis tick={{ fontSize: 11 }} />
           <Tooltip />
-          <Area type="monotone" dataKey="value" stroke="#ff6b00" fill="#ffb86a" strokeWidth={2} />
+          <Area type="monotone" dataKey="value" stroke="#10b981" fill="#a7f3d0" strokeWidth={2} />
         </AreaChart>
       </ResponsiveContainer>
     )
@@ -69,7 +68,7 @@ function ChartRenderer({ config, data, height = 260 }: { config: { chartType: st
           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
           <YAxis tick={{ fontSize: 11 }} />
           <Tooltip />
-          <Line type="monotone" dataKey="value" stroke="#ff6b00" strokeWidth={2} dot={false} />
+          <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} />
         </LineChart>
       </ResponsiveContainer>
     )
@@ -81,88 +80,37 @@ function ChartRenderer({ config, data, height = 260 }: { config: { chartType: st
         <XAxis dataKey="name" tick={{ fontSize: 11 }} />
         <YAxis tick={{ fontSize: 11 }} />
         <Tooltip />
-        <Bar dataKey="value" fill="#ff6b00" radius={[6, 6, 0, 0]} />
+        <Bar dataKey="value" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   )
 }
 
-function DashboardContent() {
-  const { rawRows, fileInfo, filteredRows, error, loading, setDataset, setError, setLoading, autoCharts, generateSummary } = useDashboard()
+function MainDashboard() {
+  const {
+    rawRows, fileInfo, autoCharts,
+    setDataset, error, setError, setLoading, generateSummary, filteredRows,
+    activeRobot,
+  } = useDashboard()
+
   const [dragging, setDragging] = useState(false)
+  const [dataOpen, setDataOpen] = useState(false)
   const [mascotaMood, setMascotaMood] = useState<MascotaMood>('neutro')
-  const [dataOpen, setDataOpen] = useState(true)
-  const [mascotaVariant, setMascotaVariant] = useState<'gryph' | 'robot' | SplashAgent>(() => {
-    try {
-      const v = localStorage.getItem('copixi:mascota-variant')
-      if (v === 'robot' || v === 'gryph' || v === 'buho' || v === 'fenix' || v === 'kitsune1') return v as SplashAgent
-      return 'gryph'
-    } catch { return 'gryph' }
-  })
-  const [showSplash, setShowSplash] = useState(() => {
-    try { return localStorage.getItem('copixi:boot-seen') !== 'true' } catch { return true }
-  })
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    try { localStorage.setItem('copixi:mascota-variant', mascotaVariant) } catch {}
-  }, [mascotaVariant])
-  const handleSplashClose = () => {
-    setShowSplash(false)
-    try { localStorage.setItem('copixi:boot-seen', 'true') } catch {}
-  }
-  const handleSplashSelect = (a: SplashAgent) => {
-    setMascotaVariant(a)
-  }
+  const hasData = Boolean(rawRows && rawRows.length > 0)
+  const activeMeta = ROBOT_UNITS[activeRobot] || ROBOT_UNITS.helix
 
-  const hasData = !!rawRows
-
-  useEffect(() => {
-    const header = document.querySelector('.header')
-    if (!header) return
-    const onScroll = () => {
-      if (window.scrollY > 8) header.classList.add('scrolled')
-      else header.classList.remove('scrolled')
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent<SavedAnalysis>).detail
-      if (!detail) return
-    }
-    window.addEventListener('copixi:restore-analysis', handler as EventListener)
-    return () => window.removeEventListener('copixi:restore-analysis', handler as EventListener)
-  }, [])
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent<MascotaMood>).detail
-      if (detail) setMascotaMood(detail)
-    }
-    window.addEventListener('copixi:mascota-mood', handler as EventListener)
-    return () => window.removeEventListener('copixi:mascota-mood', handler as EventListener)
-  }, [])
-
-  useEffect(() => {
-    if (loading) setMascotaMood('duda')
-    else if (error) setMascotaMood('enojado')
-    else if (hasData) setMascotaMood('feliz')
-    else setMascotaMood('neutro')
-  }, [loading, error, hasData])
-
-  const handleRows = useCallback((rows: ReturnType<typeof useDashboard>['filteredRows'], name: string, size: number) => {
-    const r = rows as any
-    const cols = Object.keys(r[0] ?? {}).length
-    setDataset(r, { name, size, rows: r.length, columns: cols })
-    try { saveDataset({ id: Date.now().toString(36), name, rowCount: r.length, columnCount: cols, createdAt: new Date().toISOString() }) } catch {}
-  }, [setDataset])
+  const handleRows = useCallback((data: typeof filteredRows, name: string, size: number) => {
+    setDataset(data, { name, size, rows: data.length, columns: Object.keys(data[0] ?? {}).length })
+    saveDataset({ id: `ds_${Date.now()}`, name, rowCount: data.length, columnCount: Object.keys(data[0] ?? {}).length, createdAt: new Date().toISOString() })
+    setMascotaMood('feliz')
+    speak(`Dataset ${name} cargado con ${data.length} registros. Unidad activa: ${activeMeta.name}.`)
+  }, [setDataset, activeMeta.name])
 
   const parseFile = useCallback(async (file: File) => {
-    const v = validateAnyFile(file, 15)
-    if (!v.valid) { setError(v.error ?? 'Invalid file.'); return }
+    const valid = validateAnyFile(file)
+    if (!valid.valid) { setError(valid.error ?? 'Tipo de archivo no soportado'); return }
     setLoading(true); setError(null)
     try {
       const result = await parseAnyFile(file)
@@ -180,7 +128,7 @@ function DashboardContent() {
         setTimeout(() => generateSummary(), 300)
         return
       }
-      const rows = (result as { rows: unknown[] }).rows
+      const rows = result.rows
       if (!rows?.length) { setError('File is empty or has no valid rows. Try another file or use demo data.'); return }
       handleRows(rows as unknown as typeof filteredRows, file.name, file.size)
       setTimeout(() => generateSummary(), 300)
@@ -218,29 +166,30 @@ function DashboardContent() {
     if (file) parseFile(file)
   }, [parseFile])
 
-  const effectiveVariant = mascotaVariant as 'gryph' | 'robot' | 'buho' | 'fenix' | 'kitsune1'
-
   return (
     <div className="canvas-wrapper">
-      {showSplash && (
-        <BootSplash initial={mascotaVariant as SplashAgent} onSelect={handleSplashSelect} onClose={handleSplashClose} />
-      )}
-      {/* Floating Minimal Controls Bar (Sin botón de subir archivo) */}
+      {/* Floating Minimal Controls Bar */}
       <div className="canvas-top-bar" role="navigation" aria-label="Controles rápidos">
-        <div className="canvas-brand" aria-label="compexi AI">
+        <div className="canvas-brand" aria-label="Copixi AI">
           <span className="brand-mark" aria-hidden>◈</span>
-          <span className="brand-title">compexi</span>
-          <span className="brand-badge">Excel + Power BI Booster</span>
+          <span className="brand-title">Copixi</span>
+          <span className="brand-badge">Ecosistema Bio-Robótico de Datos</span>
         </div>
 
         <div className="canvas-actions">
-          <button type="button" className="btn btn-secondary small" onClick={() => setShowSplash(true)} aria-label="Cambiar potenciador">Cambiar potenciador</button>
           {hasData && (
             <div className="dataset-pill" title={fileInfo?.name ?? 'Dataset cargado'}>
               <i className="pixelart-icons-font-file" aria-hidden />
               <span>{fileInfo?.name ?? 'Archivo'} ({fileInfo?.rows ?? 0} filas)</span>
             </div>
           )}
+          <button
+            type="button"
+            className="btn btn-secondary small"
+            onClick={() => inputRef.current?.click()}
+          >
+            📂 Cargar Dataset
+          </button>
           <input
             ref={inputRef}
             type="file"
@@ -254,69 +203,23 @@ function DashboardContent() {
       <main className="main-canvas" id="main-content">
         <section
           className={`hero-excel ${dragging ? 'dropping' : ''}`}
-          aria-label="Escenario interactivo de compe"
+          aria-label="Escenario interactivo del Robot Analista"
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
         >
-          {/* Top Stage: Animated Mascot + switch chibi */}
+          {/* Top Stage: Animated Robot Mascot con Visor y Hábitat Activo */}
           <div className="mascot-stage">
             <Mascota
-              variant={effectiveVariant}
+              variant={activeRobot}
               mood={mascotaMood}
               size={180}
-              onClick={() => speak(hasData ? `Hola, tu archivo ${fileInfo?.name} está listo con ${fileInfo?.rows} filas. ¿Qué cálculo o gráfica deseas realizar?` : '¡Hola! Soy tu potenciador Excel/Power BI. Arrastra tu Excel sucio y lo dejo listo para Power BI.')}
+              onClick={() => speak(hasData ? `Unidad ${activeMeta.name} lista. ${activeMeta.tagline}` : `¡Hola! Soy ${activeMeta.name}. ${activeMeta.tagline} Carga tu dataset para comenzar.`)}
             />
           </div>
-          <div className="mascot-switch" role="group" aria-label="Cambiar mascota">
-            <button
-              type="button"
-              className={`mascot-switch-btn ${mascotaVariant === 'gryph' ? 'active' : ''}`}
-              aria-pressed={mascotaVariant === 'gryph'}
-              onClick={() => setMascotaVariant('gryph')}
-            >
-              <span aria-hidden>🦅</span> Grifo
-            </button>
-            <button
-              type="button"
-              className={`mascot-switch-btn ${mascotaVariant === 'buho' ? 'active' : ''}`}
-              aria-pressed={mascotaVariant === 'buho'}
-              onClick={() => setMascotaVariant('buho')}
-            >
-              <span aria-hidden>🦉</span> Búho
-            </button>
-            <button
-              type="button"
-              className={`mascot-switch-btn ${mascotaVariant === 'fenix' ? 'active' : ''}`}
-              aria-pressed={mascotaVariant === 'fenix'}
-              onClick={() => setMascotaVariant('fenix')}
-            >
-              <span aria-hidden>🔥</span> Fénix
-            </button>
-            <button
-              type="button"
-              className={`mascot-switch-btn ${mascotaVariant === 'kitsune1' ? 'active' : ''}`}
-              aria-pressed={mascotaVariant === 'kitsune1'}
-              onClick={() => setMascotaVariant('kitsune1')}
-            >
-              <span aria-hidden>🦊</span> Kitsune
-            </button>
-            <button
-              type="button"
-              className={`mascot-switch-btn ${mascotaVariant === 'robot' ? 'active' : ''}`}
-              aria-pressed={mascotaVariant === 'robot'}
-              onClick={() => setMascotaVariant('robot')}
-            >
-              <span aria-hidden>🤖</span> Robot
-            </button>
-          </div>
-          <div className="mascot-switch-hint" aria-live="polite">
-            {mascotaVariant === 'gryph' && 'Guardián · avisa ventas raras antes de Power BI'}
-            {mascotaVariant === 'buho' && 'Auditor Excel · encuentra vacíos y tipos mezclados'}
-            {mascotaVariant === 'fenix' && 'Power Query Booster · ordena tu Excel feo'}
-            {mascotaVariant === 'kitsune1' && 'Copiloto chat · pregúntale normal a tu Excel'}
-            {mascotaVariant === 'robot' && 'Reporter · genera informe trazable para PowerPoint'}
-          </div>
+
+          {/* Selector de Modos (Pipeline Asistido vs Especialista) & Diagnóstico Helix */}
+          <RobotEcosystemControls />
 
           {/* Interactive Speech Bubble & Excel Chat & MiniCharts */}
           <ExcelChat onOpenFilePicker={() => inputRef.current?.click()} />
@@ -329,20 +232,13 @@ function DashboardContent() {
           )}
         </section>
 
-        {/* Excel → Power BI Booster banner — explica el plus vs Copilot */}
-        {hasData && (
-          <div style={{ marginTop: 8, background: '#fffaf5', border: '1px solid #e8b4a0', borderRadius: 12, padding: '10px 12px', fontSize: 12, lineHeight: 1.5 }} role="note">
-            <strong style={{ color: '#9c5a2e' }}>Excel → Power BI listo:</strong> Copilot escribe texto, Copixi <strong>verifica números</strong> (cálculo real, no inventa), limpia tu Excel sucio y deja la tabla lista para Power BI. Todo local, trazable. <span style={{ color: 'var(--color-muted)' }}>Elige tu potenciador arriba para cambiar el enfoque.</span>
-          </div>
-        )}
-
         {/* Optional Expandable Deep Analysis / Table / Recharts Dashboard */}
         {hasData && (
           <section className="data-layer" aria-label="Dashboard detallado de datos">
             <div className="data-layer-head">
               <h3>
                 <i className="pixelart-icons-font-chart" aria-hidden />
-                <span>Explorador completo del Excel</span>
+                <span>Explorador y Dashboard Recharts</span>
               </h3>
               <button
                 className="btn btn-secondary small"
@@ -368,35 +264,30 @@ function DashboardContent() {
                       <ChartCard
                         key={`${c.config.chartType}|${c.config.x}|${c.config.y}`}
                         title={c.config.title ?? `${c.config.y} por ${c.config.x}`}
-                        icon="pixelart-icons-font-chart"
-                        empty={c.data.length ? null : 'Sin datos disponibles para esta gráfica.'}
                       >
-                        <ChartRenderer config={c.config} data={c.data as any} />
+                        <ChartRenderer config={c.config} data={c.data} height={260} />
                       </ChartCard>
                     ))
                   )}
                 </div>
-                <SummaryCard />
-                <DataTable />
                 <DataProfiler />
+                <DataTable />
                 <ExportBar />
               </div>
             )}
           </section>
         )}
       </main>
-
-      <footer className="canvas-footer" role="contentinfo">
-        <span>compexi · Booster Excel → Power BI · Cálculo real, 100% local, reporte reproducible · Tus datos no salen del navegador</span>
-      </footer>
     </div>
   )
 }
 
-export default function App() {
+export function App() {
   return (
     <DashboardProvider>
-      <DashboardContent />
+      <MainDashboard />
     </DashboardProvider>
   )
 }
+
+export default App

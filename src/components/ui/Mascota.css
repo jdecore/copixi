@@ -1,9 +1,15 @@
-/* compe — Robot futurista Cyber-EVE con visor negro y ojos de neón naranja (WALL-E inspirado) */
+/* =========================================================================
+   COPIXI ROBOT ECOSYSTEM — CHASSIS, VISORS, HABITATS & CROMATIC IDENTITY
+   Ciencia → Biología Computacional → Datos → IA → Tecnología → Productos → Ecosistemas
+   ========================================================================= */
 
 #mascota.robot-eve {
+  --robot-size: 200px;
   --mouse-x: 0px;
   --mouse-y: 0px;
   --head-rot: 0deg;
+  --unit-primary: #10b981;
+  --unit-accent: #34d399;
   width: var(--robot-size, 200px);
   height: var(--robot-size, 200px);
   position: relative;
@@ -11,9 +17,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 0 0 transparent);
-  transition: filter 400ms ease;
   user-select: none;
+  transition: all 300ms ease;
 }
 
 .robot-container {
@@ -27,6 +32,27 @@
   animation: levitacionSuave 4.5s ease-in-out infinite;
 }
 
+/* ==================== AURA / AMBIENTE DEL HÁBITAT ==================== */
+.robot-habitat-aura {
+  position: absolute;
+  width: 140%;
+  height: 140%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--unit-primary) 0%, transparent 65%);
+  opacity: 0.12;
+  filter: blur(20px);
+  pointer-events: none;
+  transition: background 500ms ease, opacity 400ms ease;
+  z-index: 1;
+}
+
+#mascota.mood-hablando .robot-habitat-aura,
+#mascota.mood-limpiando .robot-habitat-aura,
+#mascota.mood-escaneando .robot-habitat-aura {
+  opacity: 0.28;
+  animation: auraPulse 2s ease-in-out infinite alternate;
+}
+
 /* ==================== CABEZA FLOTANTE ==================== */
 .robot-head {
   width: 68%;
@@ -35,7 +61,6 @@
   z-index: 10;
   transform: rotate(var(--head-rot));
   transition: transform 140ms ease-out;
-  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.12));
 }
 
 .robot-head-shell {
@@ -52,6 +77,97 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  transition: border-color 300ms ease, border-radius 300ms ease;
+}
+
+/* --- Variaciones de Morfología de Chasis --- */
+/* C-01: CURIO (Esférico Matraz) */
+.robot-head.chasis-curio .robot-head-shell {
+  border-radius: 50%;
+  border-color: #06b6d4;
+}
+.curio-lens-rim {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 1px dashed rgba(6, 182, 212, 0.4);
+  pointer-events: none;
+}
+
+/* H-02: HELIX (Cilíndrico Bio) */
+.robot-head.chasis-helix .robot-head-shell {
+  border-radius: 38% 38% 34% 34%;
+  border-color: #10b981;
+}
+.helix-nanotubes span {
+  position: absolute;
+  width: 4px;
+  height: 20px;
+  background: #10b981;
+  border-radius: 2px;
+  opacity: 0.7;
+}
+.helix-nanotubes span:first-child { top: 10%; left: 4px; }
+.helix-nanotubes span:last-child { top: 10%; right: 4px; }
+
+/* D-03: DATUM (Monolito Cúbico) */
+.robot-head.chasis-datum .robot-head-shell {
+  border-radius: 12px;
+  border-color: #2563eb;
+}
+.datum-server-ridges span {
+  position: absolute;
+  right: 6px;
+  width: 14px;
+  height: 2px;
+  background: #2563eb;
+  opacity: 0.5;
+}
+.datum-server-ridges span:nth-child(1) { top: 20%; }
+.datum-server-ridges span:nth-child(2) { top: 35%; }
+.datum-server-ridges span:nth-child(3) { top: 50%; }
+
+/* S-04: SYNAPSE (Cúpula Hexagonal) */
+.robot-head.chasis-synapse .robot-head-shell {
+  border-radius: 50% 50% 25% 25%;
+  border-color: #8b5cf6;
+}
+.synapse-neural-filaments span {
+  position: absolute;
+  top: 4px;
+  width: 2px;
+  height: 8px;
+  background: #8b5cf6;
+  border-radius: 1px;
+}
+.synapse-neural-filaments span:first-child { left: 30%; }
+.synapse-neural-filaments span:last-child { right: 30%; }
+
+/* N-05: NEXUS (Prisma Angular) */
+.robot-head.chasis-nexus .robot-head-shell {
+  border-radius: 20px 20px 40px 40px;
+  border-color: #f59e0b;
+}
+
+/* V-06: VEKTOR (Trapezoidal Ejecutivo) */
+.robot-head.chasis-vektor .robot-head-shell {
+  border-radius: 8px 8px 24px 24px;
+  border-color: #f43f5e;
+}
+
+/* E-07: GAIA (Torus Orbital) */
+.robot-head.chasis-gaia .robot-head-shell {
+  border-radius: 46%;
+  border-color: #6366f1;
+}
+.gaia-orbital-ring {
+  position: absolute;
+  width: 110%;
+  height: 110%;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: orbitalSpin 10s linear infinite;
 }
 
 .head-gloss {
@@ -65,439 +181,380 @@
   pointer-events: none;
 }
 
-/* ==================== VISOR NEGRO BRILLANTE ==================== */
+/* ==================== VISOR DIGITAL ==================== */
 .robot-visor {
   width: 78%;
   height: 64%;
-  background: radial-gradient(circle at 50% 40%, #171d2b 0%, #080c14 100%);
-  border-radius: 46% 46% 44% 44% / 52% 52% 46% 46%;
+  background: radial-gradient(circle at 50% 40%, #0d1527 0%, #050811 100%);
+  border-radius: 40%;
   border: 2px solid #1e293b;
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-around;
-  padding: 0 12%;
+  justify-content: center;
   box-shadow:
     inset 0 4px 10px rgba(0, 0, 0, 0.8),
-    inset 0 -2px 6px rgba(255, 107, 0, 0.15),
-    0 0 12px rgba(0, 0, 0, 0.4);
+    0 0 10px rgba(0, 0, 0, 0.5);
   overflow: hidden;
 }
 
 .visor-glare {
   position: absolute;
-  top: 8%;
+  top: 6%;
   left: 12%;
   width: 76%;
   height: 30%;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.02) 100%);
   border-radius: 50%;
   pointer-events: none;
+  z-index: 5;
 }
 
-/* ==================== OJOS DE NEÓN ==================== */
-.neon-eye {
-  width: 32%;
-  aspect-ratio: 1 / 1.35;
-  background: var(--robot-neon, #ff6b00);
-  border-radius: 48%;
+/* ==================== GEOMETRÍAS FACIALES (VISORES LED) ==================== */
+
+/* 1. CURIO: Visor Círculo Monocular */
+.visor-eye-circle {
+  width: 38px;
+  height: 38px;
   position: relative;
-  box-shadow:
-    0 0 8px var(--robot-neon-bright, #ff9100),
-    0 0 16px var(--robot-neon-glow, rgba(255, 107, 0, 0.8)),
-    inset 0 0 4px rgba(255, 255, 255, 0.8);
-  animation: parpadeoDigital 4.2s infinite;
-  transition: all 180ms ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(var(--mouse-x), var(--mouse-y));
+}
+.reticle-ring {
+  width: 100%;
+  height: 100%;
+  border: 2px solid var(--unit-primary);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--unit-primary);
+  animation: reticlePulse 3s infinite ease-in-out;
+}
+.lens-center-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--unit-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--unit-accent);
 }
 
-.neon-pupil {
+/* 2. HELIX: Visor Cromosoma / Pares de Bases */
+.visor-eye-chromosome {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transform: translate(var(--mouse-x), var(--mouse-y));
+}
+.base-pair {
+  width: 6px;
+  height: 24px;
+  background: var(--unit-primary);
+  border-radius: 3px;
+  box-shadow: 0 0 8px var(--unit-primary);
+  animation: dnaScan 1.6s ease-in-out infinite alternate;
+}
+.bp-right { animation-delay: 0.8s; }
+.base-node {
+  width: 8px;
+  height: 8px;
+  background: var(--unit-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--unit-accent);
+}
+
+/* 3. DATUM: Visor Matriz 4x4 / Histogramas */
+.visor-eye-matrix {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 24px;
+  transform: translate(var(--mouse-x), var(--mouse-y));
+}
+.matrix-bar {
+  width: 6px;
+  background: var(--unit-primary);
+  border-radius: 2px;
+  box-shadow: 0 0 6px var(--unit-primary);
+  animation: matrixEqualizer 1.2s ease-in-out infinite alternate;
+}
+.matrix-bar.b1 { height: 40%; animation-delay: 0.1s; }
+.matrix-bar.b2 { height: 85%; animation-delay: 0.4s; }
+.matrix-bar.b3 { height: 60%; animation-delay: 0.2s; }
+.matrix-bar.b4 { height: 100%; animation-delay: 0.5s; }
+
+/* 4. SYNAPSE: Visor Triángulo Neural */
+.visor-eye-triangle {
+  width: 32px;
+  height: 32px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(var(--mouse-x), var(--mouse-y));
+}
+.neural-triangle-pulse {
+  width: 0;
+  height: 0;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-top: 24px solid var(--unit-primary);
+  filter: drop-shadow(0 0 6px var(--unit-primary));
+  opacity: 0.85;
+}
+.synapse-node {
   position: absolute;
-  inset: 28%;
+  top: 8px;
+  width: 6px;
+  height: 6px;
   background: #ffffff;
   border-radius: 50%;
-  box-shadow: 0 0 6px #ffffff;
-  transform: translate(var(--mouse-x), var(--mouse-y));
-  transition: transform 80ms ease-out;
+  box-shadow: 0 0 8px #ffffff;
 }
 
-/* Visor audio wave line (for speaking state) */
+/* 5. NEXUS: Visor Chevron / Rayo */
+.visor-eye-chevron {
+  display: flex;
+  gap: 3px;
+  transform: translate(var(--mouse-x), var(--mouse-y));
+}
+.chev {
+  width: 6px;
+  height: 18px;
+  background: var(--unit-primary);
+  transform: skewX(-20deg);
+  border-radius: 2px;
+  box-shadow: 0 0 6px var(--unit-primary);
+  animation: chevFlow 1.5s infinite linear;
+}
+.chev.c1 { opacity: 0.4; }
+.chev.c2 { opacity: 0.8; }
+.chev.c3 { opacity: 1; }
+
+/* 6. VEKTOR: Visor Retícula / Diamante */
+.visor-eye-reticle {
+  width: 32px;
+  height: 32px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(var(--mouse-x), var(--mouse-y));
+}
+.diamond-target {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--unit-primary);
+  transform: rotate(45deg);
+  box-shadow: 0 0 8px var(--unit-primary);
+}
+.target-crosshair {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--unit-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--unit-accent);
+}
+
+/* 7. GAIA: Visor Fractal / Orbital */
+.visor-eye-fractal {
+  width: 36px;
+  height: 36px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(var(--mouse-x), var(--mouse-y));
+}
+.fractal-ring {
+  position: absolute;
+  border: 2px dashed var(--unit-primary);
+  border-radius: 50%;
+}
+.fractal-ring.r1 { width: 32px; height: 32px; animation: orbitalSpin 8s linear infinite; }
+.fractal-ring.r2 { width: 20px; height: 20px; border-style: solid; opacity: 0.6; }
+.fractal-core {
+  width: 8px;
+  height: 8px;
+  background: #fef08a;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #fef08a;
+}
+
+/* ==================== AUDIO ONDA AL HABLAR ==================== */
 .visor-audio-wave {
   position: absolute;
-  bottom: 12%;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 6px;
   display: none;
-  align-items: center;
   gap: 3px;
-  height: 8px;
+  align-items: flex-end;
+  height: 10px;
+  z-index: 6;
 }
-.visor-audio-wave .wave-bar {
-  width: 2px;
-  background: var(--robot-neon-bright, #ff9100);
+#mascota.mood-hablando .visor-audio-wave {
+  display: flex;
+}
+.wave-bar {
+  width: 3px;
+  background: var(--unit-accent);
   border-radius: 1px;
-  box-shadow: 0 0 4px var(--robot-neon-glow);
-  animation: visorWave 600ms ease-in-out infinite alternate;
+  animation: waveBounce 0.6s infinite ease-in-out alternate;
 }
-.visor-audio-wave .wave-bar:nth-child(1) { height: 4px; animation-delay: 0ms; }
-.visor-audio-wave .wave-bar:nth-child(2) { height: 7px; animation-delay: 100ms; }
-.visor-audio-wave .wave-bar:nth-child(3) { height: 5px; animation-delay: 200ms; }
-.visor-audio-wave .wave-bar:nth-child(4) { height: 8px; animation-delay: 150ms; }
-.visor-audio-wave .wave-bar:nth-child(5) { height: 4px; animation-delay: 250ms; }
+.wave-bar:nth-child(1) { height: 4px; animation-delay: 0.1s; }
+.wave-bar:nth-child(2) { height: 8px; animation-delay: 0.2s; }
+.wave-bar:nth-child(3) { height: 10px; animation-delay: 0s; }
+.wave-bar:nth-child(4) { height: 6px; animation-delay: 0.3s; }
+.wave-bar:nth-child(5) { height: 3px; animation-delay: 0.15s; }
 
-@keyframes visorWave {
-  0% { height: 2px; }
-  100% { height: 8px; }
-}
-
-/* ==================== CUERPO FLOTANTE ==================== */
+/* ==================== CUERPO DEL ROBOT ==================== */
 .robot-body {
-  width: 52%;
-  aspect-ratio: 1 / 1.15;
-  margin-top: -8%;
+  width: 50%;
+  height: 40%;
   position: relative;
-  z-index: 5;
-  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.08));
-}
-
-.robot-body-shell {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(175deg, #ffffff 0%, #f1f5f9 60%, #e2e8f0 100%);
-  border-radius: 46% 46% 50% 50% / 35% 35% 65% 65%;
-  border: 2px solid #e2e8f0;
-  box-shadow:
-    inset -4px -6px 8px rgba(203, 213, 225, 0.5),
-    inset 4px 6px 8px rgba(255, 255, 255, 0.9);
+  margin-top: -6px;
+  z-index: 8;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.chest-core {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #090d16;
-  border: 2px solid #1e293b;
-  display: grid;
-  place-items: center;
-  box-shadow: inset 0 0 6px rgba(0,0,0,0.8);
-}
-.core-light {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--robot-neon, #ff6b00);
-  box-shadow: 0 0 8px var(--robot-neon-glow);
-  animation: corePulse 2.4s infinite ease-in-out;
-}
-@keyframes corePulse {
-  0%, 100% { opacity: 0.7; transform: scale(0.9); }
-  50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 12px var(--robot-neon-glow); }
-}
-
-/* Arms */
-.robot-arm {
-  position: absolute;
-  top: 15%;
-  width: 14%;
-  height: 55%;
-  background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
-  border-radius: 12px;
-  border: 1.5px solid #e2e8f0;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.06);
-  transition: transform 300ms ease;
-}
-.robot-arm.left {
-  left: -8%;
-  transform: rotate(8deg);
-}
-.robot-arm.right {
-  right: -8%;
-  transform: rotate(-8deg);
-}
-
-/* Base Shadow & Levitation Glow */
-.robot-thruster-glow {
-  position: absolute;
-  bottom: 6%;
-  width: 32%;
-  height: 8%;
-  background: radial-gradient(ellipse, var(--robot-neon-soft, rgba(255, 107, 0, 0.35)) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
-  animation: thrusterPulse 1.8s infinite alternate;
-}
-@keyframes thrusterPulse {
-  0% { transform: scale(0.85); opacity: 0.5; }
-  100% { transform: scale(1.15); opacity: 0.9; }
-}
-
-.robot-shadow {
-  position: absolute;
-  bottom: 0;
-  width: 48%;
-  height: 10px;
-  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.15) 0%, transparent 75%);
-  border-radius: 50%;
-  animation: shadowScale 4.5s ease-in-out infinite;
-}
-
-@keyframes levitacionSuave {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-
-@keyframes shadowScale {
-  0%, 100% { transform: scale(1); opacity: 0.15; }
-  50% { transform: scale(0.85); opacity: 0.08; }
-}
-
-@keyframes parpadeoDigital {
-  0%, 45%, 49%, 100% { transform: scaleY(1); }
-  47% { transform: scaleY(0.08); }
-}
-
-/* ==================== ESTADOS / MOODS DE NEÓN ==================== */
-
-/* Hablando (TTS) */
-.mood-hablando .neon-eye {
-  animation: parpadeoHablando 0.6s infinite alternate;
-}
-.mood-hablando .visor-audio-wave {
-  display: flex;
-}
-.mood-hablando .robot-arm.left {
-  transform: rotate(14deg) translateY(-2px);
-}
-.mood-hablando .robot-arm.right {
-  transform: rotate(-14deg) translateY(-2px);
-}
-@keyframes parpadeoHablando {
-  0% { transform: scaleY(0.9); }
-  100% { transform: scaleY(1.15); }
-}
-
-/* Pensando */
-.mood-pensando .neon-eye {
-  border-radius: 50%;
-  aspect-ratio: 1 / 1;
-  width: 26%;
-  animation: scanningOrbit 1.2s infinite linear;
-  box-shadow: 0 0 12px var(--robot-neon-bright), 0 0 20px var(--robot-neon-glow);
-}
-.mood-pensando .neon-pupil {
-  display: none;
-}
-@keyframes scanningOrbit {
-  0% { transform: rotate(0deg) scale(0.9); }
-  50% { transform: rotate(180deg) scale(1.1); }
-  100% { transform: rotate(360deg) scale(0.9); }
-}
-
-/* Feliz / Éxito */
-.mood-feliz .neon-eye,
-.mood-exito .neon-eye {
-  aspect-ratio: 1 / 0.7;
-  border-radius: 50% 50% 0 0;
+.robot-body-shell {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #f8fafc 0%, #cbd5e1 100%);
+  border-radius: 36% 36% 50% 50% / 30% 30% 60% 60%;
+  border: 2px solid #e2e8f0;
   box-shadow:
-    0 0 12px var(--robot-neon-bright),
-    0 0 24px var(--robot-neon-glow);
-  transform: translateY(-2px);
-}
-.mood-feliz .neon-pupil,
-.mood-exito .neon-pupil {
-  display: none;
-}
-.mood-exito .robot-arm.left {
-  transform: rotate(-24deg) translateY(-8px);
-}
-.mood-exito .robot-arm.right {
-  transform: rotate(24deg) translateY(-8px);
-}
-
-/* Duda / Inclinado */
-.mood-duda .robot-head {
-  transform: rotate(6deg);
-}
-.mood-duda .neon-eye.left {
-  transform: scale(0.85);
-}
-.mood-duda .neon-eye.right {
-  transform: scale(1.1);
-}
-
-/* Enojado / Error */
-.mood-enojado .neon-eye {
-  background: #ff2a2a;
-  box-shadow: 0 0 12px #ff2a2a, 0 0 20px rgba(255, 42, 42, 0.8);
-  border-radius: 40% 10% 50% 50%;
-  transform: rotate(12deg);
-}
-.mood-enojado .neon-eye.right {
-  border-radius: 10% 40% 50% 50%;
-  transform: rotate(-12deg);
-}
-.mood-enojado .core-light {
-  background: #ff2a2a;
-  box-shadow: 0 0 8px #ff2a2a;
-}
-
-/* Escuchando */
-.mood-escuchando .neon-eye {
-  transform: scale(1.12);
-  box-shadow: 0 0 14px var(--robot-neon-bright), 0 0 22px var(--robot-neon-glow);
-}
-
-/* Subtítulos debajo del robot si aplican */
-#subtitulos {
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--color-muted, #64748b);
-  text-align: center;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  transition: color 250ms ease;
-}
-
-/* Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-  .robot-container,
-  .robot-shadow,
-  .neon-eye,
-  .core-light,
-  .robot-thruster-glow,
-  .gryph-container,
-  .gryph-shadow,
-  .gryph-wing,
-  .gryph-eye,
-  .gryph-glow {
-    animation: none !important;
-  }
-}
-
-/* ============================================================
-   CRIATURAS — MOLDE ROBOT (reusan robot-container etc, solo reskin)
-   Todas usan el mismo DOM que robot, solo cambian colores vía #mascota.<variant>
-   Robot intacto arriba no se toca. Sin clip-path complejo, solo border-radius.
-   ============================================================ */
-#mascota.gryph, #mascota.buho, #mascota.fenix, #mascota.kitsune1 {
-  --mouse-x: 0px;
-  --mouse-y: 0px;
-  --head-rot: 0deg;
-  width: var(--robot-size, 200px);
-  height: var(--robot-size, 200px);
+    inset -3px -4px 6px rgba(148, 163, 184, 0.4),
+    inset 3px 4px 6px #ffffff,
+    0 8px 16px rgba(0, 0, 0, 0.08);
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  user-select: none;
+  overflow: hidden;
 }
-#mascota.gryph .robot-container,
-#mascota.buho .robot-container,
-#mascota.fenix .robot-container,
-#mascota.kitsune1 .robot-container {
-  animation: levitacionSuave 4.5s ease-in-out infinite;
-}
-/* Extras criatura ocultos en robot */
-#mascota.robot-eve .creature-ears,
-#mascota.robot-eve .creature-crest,
-#mascota.robot-eve .creature-beak { display: none; }
-.creature-ears {
+
+.body-gloss {
   position: absolute;
-  top: 4%;
-  left: 8%;
-  right: 8%;
-  display: flex;
-  justify-content: space-between;
+  top: 6%;
+  width: 60%;
+  height: 20%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, transparent 100%);
+  border-radius: 50%;
   pointer-events: none;
-  z-index: 2;
 }
-.creature-ears span {
-  width: 16%;
-  height: 18px;
-  background: var(--gryph-feather-mid);
-  border: 1.2px solid var(--gryph-body-outline);
-  border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+
+.chest-core {
+  width: 58px;
+  height: 22px;
+  background: #0f172a;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 4px;
 }
-.creature-crest {
+
+.core-light {
+  width: 6px;
+  height: 6px;
+  background: var(--unit-primary);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--unit-primary);
+}
+
+.unit-badge-text {
+  font-family: monospace;
+  font-size: 8px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+
+.robot-arm {
   position: absolute;
-  top: -6%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 20%;
-  height: 10%;
-  background: var(--gryph-mane);
-  border-radius: 50% 50% 40% 40% / 70% 70% 30% 30%;
-  z-index: 1;
+  top: 15%;
+  width: 14px;
+  height: 38px;
+  background: linear-gradient(180deg, #f8fafc 0%, #cbd5e1 100%);
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
 }
-.creature-beak {
+.robot-arm.left { left: -8px; transform: rotate(8deg); }
+.robot-arm.right { right: -8px; transform: rotate(-8deg); }
+
+/* Propulsor & Sombra */
+.robot-thruster-glow {
   position: absolute;
-  bottom: 12%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 26%;
-  height: 18%;
-  z-index: 3;
-  display: grid;
-  place-items: center;
+  bottom: 10px;
+  width: 30px;
+  height: 12px;
+  background: radial-gradient(ellipse at center, var(--unit-primary) 0%, transparent 70%);
+  filter: blur(4px);
+  opacity: 0.6;
 }
-.creature-beak .beak-tip {
-  width: 56%;
-  height: 68%;
-  background: linear-gradient(180deg, var(--gryph-beak-light) 0%, var(--gryph-beak) 50%, var(--gryph-beak-deep) 100%);
-  border: 1.2px solid var(--gryph-nose);
-  border-radius: 40% 40% 30% 30% / 60% 60% 40% 40%;
+
+.robot-shadow {
+  position: absolute;
+  bottom: -4px;
+  width: 60px;
+  height: 10px;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.25) 0%, transparent 70%);
+  border-radius: 50%;
 }
-/* Reskin por variante — CREA la criatura dentro del molde robot redondo */
-#mascota.gryph .robot-head-shell { background: linear-gradient(170deg, #fffdf8 0%, var(--gryph-feather) 55%, var(--gryph-feather-mid) 100%); border-color: var(--gryph-body-outline); box-shadow: inset -4px -6px 8px rgba(156,90,46,0.18), inset 4px 6px 8px #fff, 0 4px 10px rgba(0,0,0,0.05); }
-#mascota.gryph .robot-visor { background: radial-gradient(circle at 50% 35%, #fffaf0 0%, #fde6d0 45%, #e8b4a0 100%); border-color: var(--gryph-body-outline); }
-#mascota.gryph .neon-eye { background: radial-gradient(circle at 30% 28%, #fffaf0 0%, var(--gryph-eye-bright) 22%, var(--gryph-eye) 44%, var(--gryph-nose) 100%); border-color: var(--gryph-nose); box-shadow: 0 0 0 2px rgba(245,214,191,0.85), 0 0 10px var(--gryph-eye-glow); width: 30%; }
-#mascota.gryph .creature-beak { width: 30%; height: 22%; bottom: 10%; }
-#mascota.gryph .creature-beak .beak-tip { width: 58%; height: 72%; background: linear-gradient(180deg, #fde6c8 0%, var(--gryph-beak) 40%, var(--gryph-beak-deep) 100%); border-radius: 42% 42% 28% 28% / 65% 65% 35% 35%; border-width: 1.4px; }
-#mascota.gryph .creature-ears span { background: var(--gryph-mane); border-color: var(--gryph-nose); height: 16px; }
-#mascota.gryph .creature-crest { background: var(--gryph-mane-deep); width: 16%; height: 8%; }
-#mascota.gryph .robot-body-shell { background: linear-gradient(175deg, #fffdf8 0%, var(--gryph-body) 55%, var(--gryph-body-shadow) 100%); border-color: var(--gryph-body-outline); }
-#mascota.gryph .robot-arm { background: linear-gradient(180deg, #fff 0%, var(--gryph-feather-mid) 100%); border-color: var(--gryph-body-outline); }
-#mascota.gryph .core-light { background: var(--gryph-eye); box-shadow: 0 0 10px var(--gryph-eye-glow); }
-#mascota.gryph .robot-thruster-glow { background: radial-gradient(ellipse, rgba(184,115,51,0.26) 0%, transparent 70%); }
 
-#mascota.buho .robot-head-shell { background: linear-gradient(170deg, #fff 0%, #fff7ed 55%, #f5d6bf 100%); border-color: #9c5a2e; }
-#mascota.buho .robot-visor { background: radial-gradient(circle at 50% 38%, #fff 0%, #fff7ed 45%, #f5d6bf 100%); border-color: #9c5a2e; box-shadow: inset 0 4px 10px rgba(156,90,46,0.12), 0 0 0 2px #fff; }
-#mascota.buho .neon-eye { width: 38%; background: radial-gradient(circle at 32% 28%, #fff 0%, #fff7ed 22%, #f5d6bf 38%, #d4926b 58%, #9c5a2e 100%); border-width: 2.4px; border-color: #7a3b1a; box-shadow: 0 0 0 4px #fff, 0 0 0 6px rgba(212,146,107,0.35), 0 0 12px var(--gryph-eye-glow); }
-#mascota.buho .neon-eye .neon-pupil { width: 52%; height: 52%; background: #1a0f08; }
-#mascota.buho .creature-ears span { height: 14px; width: 12%; background: #f5d6bf; border-color: #9c5a2e; border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%; }
-#mascota.buho .creature-crest { display: none; }
-#mascota.buho .creature-beak { width: 18%; height: 12%; bottom: 14%; }
-#mascota.buho .creature-beak .beak-tip { width: 36%; height: 48%; background: #f59e0b; border-color: #7a3b1a; border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%; }
-#mascota.buho .robot-body-shell { background: linear-gradient(175deg, #fff 0%, #fff7ed 50%, #f5d6bf 80%); border-color: #9c5a2e; }
-#mascota.buho .robot-arm { background: linear-gradient(180deg, #fff7ed 0%, #f5d6bf 100%); border-color: #9c5a2e; }
-#mascota.buho .core-light { background: #d4926b; }
+/* ==================== SUBTÍTULOS ==================== */
+#subtitulos {
+  position: absolute;
+  bottom: -28px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(6px);
+  color: #f8fafc;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
 
-#mascota.fenix .robot-head-shell { background: linear-gradient(170deg, #fff 0%, #ffedd5 50%, #fed7aa 100%); border-color: #c2410c; }
-#mascota.fenix .robot-visor { background: radial-gradient(circle at 50% 35%, #fff 0%, #ffedd5 45%, #fdba74 100%); border-color: #c2410c; }
-#mascota.fenix .neon-eye { width: 28%; background: radial-gradient(circle at 30% 26%, #fffaf0 0%, #ff8c2f 30%, #c2410c 60%, #7f1d1d 100%); border-color: #7f1d1d; border-radius: 48% 48% 42% 42% / 55% 55% 45% 45%; }
-#mascota.fenix .creature-crest { display: block; background: linear-gradient(180deg, #fff7ed 0%, #ff8c2f 30%, #c2410c 60%, #7f1d1d 100%); height: 22%; width: 28%; top: -10%; border-radius: 50% 50% 30% 30% / 40% 40% 60% 60%; clip-path: polygon(50% 0, 62% 26%, 78% 14%, 74% 36%, 88% 48%, 72% 62%, 78% 84%, 50% 100%, 22% 84%, 28% 62%, 12% 48%, 26% 36%, 22% 14%, 38% 26%); border: 1.2px solid #7f1d1d; }
-#mascota.fenix .creature-ears { display: none; }
-#mascota.fenix .creature-beak { width: 22%; height: 16%; }
-#mascota.fenix .creature-beak .beak-tip { background: linear-gradient(180deg, #fff7ed 0%, #ff8c2f 45%, #9a1212 100%); width: 48%; border-radius: 42% 42% 32% 32% / 70% 70% 30% 30%; }
-#mascota.fenix .robot-body-shell { background: linear-gradient(175deg, #fff 0%, #ffedd5 45%, #ff8c2f 75%, #c2410c 100%); border-color: #7f1d1d; }
-#mascota.fenix .robot-arm { background: linear-gradient(180deg, #ffedd5 0%, #ff8c2f 60%, #7f1d1d 100%); border-color: #7f1d1d; }
-#mascota.fenix .robot-thruster-glow { background: radial-gradient(ellipse, rgba(194,65,12,0.38) 0%, rgba(255,140,47,0.22) 35%, transparent 70%); height: 12%; bottom: 4%; }
-#mascota.fenix .core-light { background: #ff8c2f; box-shadow: 0 0 12px #ff8c2f, 0 0 20px rgba(194,65,12,0.6); animation: corePulse 1.2s infinite; }
+/* ==================== KEYFRAMES ==================== */
+@keyframes levitacionSuave {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
 
-#mascota.kitsune1 .robot-head-shell { background: linear-gradient(170deg, #fff 0%, #fff7ed 50%, #fde6d0 85%, #e8b4a0 100%); border-color: #9c5a2e; }
-#mascota.kitsune1 .creature-ears { top: 0%; }
-#mascota.kitsune1 .creature-ears span { height: 28px; width: 18%; background: linear-gradient(180deg, #fff 0%, #f5d6bf 40%, #d4926b 70%, #fff 100%); border-radius: 70% 70% 18% 18% / 80% 80% 20% 20%; border-color: #9c5a2e; }
-#mascota.kitsune1 .creature-ears span::after { content: ''; position: absolute; inset: 28% 22% 18% 22%; background: #ff8c9e; border-radius: 50% 50% 40% 40%; opacity: 0.85; }
-#mascota.kitsune1 .neon-eye { width: 30%; border-radius: 48% 48% 44% 44% / 58% 58% 42% 42%; background: radial-gradient(circle at 30% 26%, #fffaf0 0%, #f5d6bf 28%, #d4926b 48%, #7a3b1a 100%); transform: rotate(-2deg); }
-#mascota.kitsune1 .neon-eye.right { transform: rotate(2deg); }
-#mascota.kitsune1 .creature-crest { display: none; }
-#mascota.kitsune1 .creature-beak { width: 16%; height: 12%; background: #1a0f08; border-radius: 50% 50% 50% 50% / 55% 55% 45% 45%; bottom: 15%; }
-#mascota.kitsune1 .creature-beak .beak-tip { display: none; }
-#mascota.kitsune1 .creature-beak::after { content: ''; position: absolute; bottom: -3px; left: 50%; transform: translateX(-50%); width: 40%; height: 2px; background: #fff; border-radius: 1px; opacity: 0.9; }
-#mascota.kitsune1 .robot-body-shell { background: linear-gradient(175deg, #fff 0%, #fff7ed 45%, #f5d6bf 70%, #e8b4a0 100%); border-color: #9c5a2e; }
-#mascota.kitsune1 .robot-arm { background: linear-gradient(180deg, #fff 0%, #f5d6bf 100%); border-color: #9c5a2e; }
-#mascota.kitsune1 .robot-thruster-glow { background: radial-gradient(ellipse, #fff 0%, #f5d6bf 30%, #d4926b 55%, transparent 70%); height: 10%; width: 40%; }
-#mascota.kitsune1 .core-light { background: #fff; border: 1.5px solid #d4926b; }
+@keyframes auraPulse {
+  0% { transform: scale(0.95); opacity: 0.18; }
+  100% { transform: scale(1.05); opacity: 0.32; }
+}
+
+@keyframes reticlePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes dnaScan {
+  0% { height: 12px; opacity: 0.5; }
+  100% { height: 26px; opacity: 1; }
+}
+
+@keyframes matrixEqualizer {
+  0% { height: 20%; }
+  100% { height: 95%; }
+}
+
+@keyframes orbitalSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes waveBounce {
+  from { height: 2px; }
+  to { height: 12px; }
+}

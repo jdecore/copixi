@@ -6,6 +6,11 @@ import { applyFilters } from '../data/transformations'
 import { detectAnomaliesZScore } from '../data/anomalyDetection'
 import { toTimeSeries, toBarData, suggestCharts } from '../data/chartAdapter'
 import { ragSearch, type RagHit } from '../lib/rag'
+import { diagnoseDataset, applyCleaningOperations, type CleaningDiagnosis, type CleaningOperation, type CleaningResult } from '../data/cleaner'
+import type { RobotUnitId } from '../types/mascota'
+
+export type AnalysisMode = 'pipeline' | 'specialist'
+export type PipelineStep = 'cleaning' | 'profiling' | 'patterns' | 'charts' | 'strategy'
 
 function looksLikeDate(values: unknown[]): boolean {
   const samples = values.filter((v) => v !== null && v !== "" && v !== undefined).slice(0, 20)
@@ -60,6 +65,11 @@ type DashboardState = {
   summary: string | null
   summaryStatus: 'idle' | 'loading' | 'ready' | 'error'
   summaryError: string | null
+  analysisMode: AnalysisMode
+  activeRobot: RobotUnitId
+  pipelineStep: PipelineStep
+  cleaningHistory: Row[][]
+  lastCleaningResult: CleaningResult | null
 }
 
 type DashboardDerived = {
@@ -84,6 +94,7 @@ type DashboardDerived = {
   salesCol: string | null
   unitsCol: string | null
   customersCol: string | null
+  cleaningDiagnosis: CleaningDiagnosis | null
 }
 
 type DashboardActions = {
@@ -100,6 +111,11 @@ type DashboardActions = {
   ragQuery: (query: string, topK?: number) => Promise<RagHit[] | null>
   generateSummary: () => Promise<void>
   setSummary: (s: string | null) => void
+  setAnalysisMode: (mode: AnalysisMode) => void
+  setActiveRobot: (robot: RobotUnitId) => void
+  setPipelineStep: (step: PipelineStep) => void
+  applyCleaning: (ops: CleaningOperation[]) => CleaningResult
+  undoCleaning: () => boolean
 }
 
 type DashboardContextValue = DashboardState & DashboardDerived & DashboardActions
@@ -138,6 +154,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [summary, setSummary] = useState<string | null>(null)
   const [summaryStatus, setSummaryStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [summaryError, setSummaryError] = useState<string | null>(null)
+
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('pipeline')
+  const [activeRobot, setActiveRobot] = useState<RobotUnitId>('helix')
+  const [pipelineStep, setPipelineStep] = useState<PipelineStep>('cleaning')
+  const [cleaningHistory, setCleaningHistory] = useState<Row[][]>([])
+  const [lastCleaningResult, setLastCleaningResult] = useState<CleaningResult | null>(null)
 
   const profile = useMemo(() => (rawRows ? profileDataset(rawRows) : null), [rawRows])
   const columns = useMemo(() => profile?.columns ?? [], [profile])
@@ -224,6 +246,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     return out
   }, [columns, filteredRows, catCols, salesCol, numCols])
 
+  const cleaningDiagnosis = useMemo(() => {
+    if (!rawRows || !columns.length) return null
+    return diagnoseDataset(rawRows, columns)
+  }, [rawRows, columns])
+
   const suggestedQuestions = useMemo(() => {
     if (!columns.length) return []
     const qs: string[] = []
@@ -260,6 +287,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setSummary(null)
     setSummaryStatus('idle')
     setSummaryError(null)
+    setCleaningHistory([])
+    setLastCleaningResult(null)
+    setPipelineStep('cleaning')
+    setActiveRobot('helix')
   }, [])
 
   const clearDataset = useCallback(() => {
@@ -274,6 +305,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setSummary(null)
     setSummaryStatus('idle')
     setSummaryError(null)
+    setCleaningHistory([])
+    setLastCleaningResult(null)
   }, [])
 
   const addFilter = useCallback((f: Filter): boolean => {
@@ -323,7 +356,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setSummaryStatus('loading')
     setSummaryError(null)
     try {
-      // Build minimal JSON context — tokens mínimos (§9)
       const ctx = {
         rowCount: rawRows.length,
         filteredCount: filteredRows.length,
@@ -353,14 +385,39 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
   }, [rawRows, columns, filteredRows.length, metrics, byProduct, byCity, byCategory, timeSeries, filters, autoCharts])
 
+  const applyCleaning = useCallback((ops: CleaningOperation[]): CleaningResult => {
+    if (!rawRows) {
+      return { cleanedRows: [], appliedOperations: [], rowsRemoved: 0, cellsModified: 0, summary: 'No dataset loaded' }
+    }
+    const result = applyCleaningOperations(rawRows, ops)
+    setCleaningHistory((prev) => [...prev, rawRows])
+    setRawRows(result.cleanedRows)
+    setLastCleaningResult(result)
+    return result
+  }, [rawRows])
+
+  const undoCleaning = useCallback((): boolean => {
+    if (cleaningHistory.length === 0) return false
+    const previous = cleaningHistory[cleaningHistory.length - 1]
+    if (previous) {
+      setRawRows(previous)
+      setCleaningHistory((prev) => prev.slice(0, prev.length - 1))
+      setLastCleaningResult(null)
+      return true
+    }
+    return false
+  }, [cleaningHistory])
+
   const value: DashboardContextValue = {
     rawRows, fileInfo, filters, activeChart, error, loading, sortCol, sortDir, searchQuery, embeddingStatus, topSimilarRows,
     summary, summaryStatus, summaryError,
     profile, columns, filteredRows, metrics, timeSeries, byCity, byCategory, byProduct, anomalies, autoCharts,
     nullPercentages, dateRange, topCategories, suggestedQuestions,
     dateCol, primaryCat, catCols, numCols, salesCol, unitsCol, customersCol,
+    analysisMode, activeRobot, pipelineStep, cleaningHistory, lastCleaningResult, cleaningDiagnosis,
     setDataset, clearDataset, addFilter, removeFilter, clearFilters, setActiveChart, setError, setLoading, setSort, setSearch,
     ragQuery, generateSummary, setSummary,
+    setAnalysisMode, setActiveRobot, setPipelineStep, applyCleaning, undoCleaning,
   }
 
   return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>
