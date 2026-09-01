@@ -1,5 +1,5 @@
 /* =========================================================================
-   COPIXI ROBOT ECOSYSTEM — CHASSIS, VISORS, HABITATS & CROMATIC IDENTITY
+   COPIXI ROBOT ECOSYSTEM — FRIENDLY EVE-STYLE EXPRESSIVE ROBOTS
    Ciencia → Biología Computacional → Datos → IA → Tecnología → Productos → Ecosistemas
    ========================================================================= */
 
@@ -39,7 +39,7 @@
   height: 140%;
   border-radius: 50%;
   background: radial-gradient(circle, var(--unit-primary) 0%, transparent 65%);
-  opacity: 0.12;
+  opacity: 0.15;
   filter: blur(20px);
   pointer-events: none;
   transition: background 500ms ease, opacity 400ms ease;
@@ -47,13 +47,13 @@
 }
 
 #mascota.mood-hablando .robot-habitat-aura,
-#mascota.mood-limpiando .robot-habitat-aura,
-#mascota.mood-escaneando .robot-habitat-aura {
-  opacity: 0.28;
+#mascota.mood-feliz .robot-habitat-aura,
+#mascota.mood-exito .robot-habitat-aura {
+  opacity: 0.3;
   animation: auraPulse 2s ease-in-out infinite alternate;
 }
 
-/* ==================== CABEZA FLOTANTE ==================== */
+/* ==================== CABEZA FLOTANTE AMIGABLE ==================== */
 .robot-head {
   width: 68%;
   aspect-ratio: 1.25 / 1;
@@ -61,6 +61,7 @@
   z-index: 10;
   transform: rotate(var(--head-rot));
   transition: transform 140ms ease-out;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.12));
 }
 
 .robot-head-shell {
@@ -76,99 +77,113 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  transition: border-color 300ms ease, border-radius 300ms ease;
+  overflow: visible;
+  transition: all 300ms ease;
 }
 
-/* --- Variaciones de Morfología de Chasis --- */
-/* C-01: CURIO (Esférico Matraz) */
-.robot-head.chasis-curio .robot-head-shell {
-  border-radius: 50%;
-  border-color: #06b6d4;
-}
-.curio-lens-rim {
-  position: absolute;
-  inset: 4px;
-  border-radius: 50%;
-  border: 1px dashed rgba(6, 182, 212, 0.4);
-  pointer-events: none;
-}
+/* --- Variaciones de Chasis y Accesorios Expresivos por Robot --- */
 
-/* H-02: HELIX (Cilíndrico Bio) */
-.robot-head.chasis-helix .robot-head-shell {
-  border-radius: 38% 38% 34% 34%;
-  border-color: #10b981;
-}
-.helix-nanotubes span {
+/* C-01: CURIO (Antenita Curiosa de Explorador) */
+.curio-antennae {
   position: absolute;
-  width: 4px;
-  height: 20px;
-  background: #10b981;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+}
+.antenna-stalk {
+  width: 3px;
+  height: 14px;
+  background: #06b6d4;
   border-radius: 2px;
-  opacity: 0.7;
 }
-.helix-nanotubes span:first-child { top: 10%; left: 4px; }
-.helix-nanotubes span:last-child { top: 10%; right: 4px; }
-
-/* D-03: DATUM (Monolito Cúbico) */
-.robot-head.chasis-datum .robot-head-shell {
-  border-radius: 12px;
-  border-color: #2563eb;
-}
-.datum-server-ridges span {
-  position: absolute;
-  right: 6px;
-  width: 14px;
-  height: 2px;
-  background: #2563eb;
-  opacity: 0.5;
-}
-.datum-server-ridges span:nth-child(1) { top: 20%; }
-.datum-server-ridges span:nth-child(2) { top: 35%; }
-.datum-server-ridges span:nth-child(3) { top: 50%; }
-
-/* S-04: SYNAPSE (Cúpula Hexagonal) */
-.robot-head.chasis-synapse .robot-head-shell {
-  border-radius: 50% 50% 25% 25%;
-  border-color: #8b5cf6;
-}
-.synapse-neural-filaments span {
-  position: absolute;
-  top: 4px;
-  width: 2px;
+.antenna-bulb {
+  width: 8px;
   height: 8px;
-  background: #8b5cf6;
-  border-radius: 1px;
-}
-.synapse-neural-filaments span:first-child { left: 30%; }
-.synapse-neural-filaments span:last-child { right: 30%; }
-
-/* N-05: NEXUS (Prisma Angular) */
-.robot-head.chasis-nexus .robot-head-shell {
-  border-radius: 20px 20px 40px 40px;
-  border-color: #f59e0b;
-}
-
-/* V-06: VEKTOR (Trapezoidal Ejecutivo) */
-.robot-head.chasis-vektor .robot-head-shell {
-  border-radius: 8px 8px 24px 24px;
-  border-color: #f43f5e;
-}
-
-/* E-07: GAIA (Torus Orbital) */
-.robot-head.chasis-gaia .robot-head-shell {
-  border-radius: 46%;
-  border-color: #6366f1;
-}
-.gaia-orbital-ring {
-  position: absolute;
-  width: 110%;
-  height: 110%;
-  border: 1px solid rgba(99, 102, 241, 0.4);
+  background: #38bdf8;
   border-radius: 50%;
-  pointer-events: none;
-  animation: orbitalSpin 10s linear infinite;
+  box-shadow: 0 0 8px #38bdf8;
+  animation: curioBlink 2s infinite ease-in-out;
 }
+
+/* H-02: HELIX (Aletas Bio-Secuenciadoras) */
+.helix-fins .fin {
+  position: absolute;
+  top: 15%;
+  width: 8px;
+  height: 24px;
+  background: #10b981;
+  border-radius: 4px;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+}
+.helix-fins .fin.left { left: -6px; transform: rotate(-12deg); }
+.helix-fins .fin.right { right: -6px; transform: rotate(12deg); }
+
+/* D-03: DATUM (Orejitas Modulares de Computadora) */
+.datum-ears .ear {
+  position: absolute;
+  top: -4px;
+  width: 12px;
+  height: 12px;
+  background: #2563eb;
+  border-radius: 4px;
+  box-shadow: 0 0 6px rgba(37, 99, 235, 0.4);
+}
+.datum-ears .ear.left { left: 10px; transform: rotate(-15deg); }
+.datum-ears .ear.right { right: 10px; transform: rotate(15deg); }
+
+/* S-04: SYNAPSE (Corona / Halo Sináptico Flotante) */
+.synapse-halo {
+  position: absolute;
+  top: -14px;
+  width: 60px;
+  height: 14px;
+  border: 2px solid #8b5cf6;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #8b5cf6;
+  animation: haloFloat 3s infinite ease-in-out alternate;
+}
+
+/* N-05: NEXUS (Alitas Laterales Aerodinámicas) */
+.nexus-headwings .hwing {
+  position: absolute;
+  top: 30%;
+  width: 14px;
+  height: 8px;
+  background: #f59e0b;
+  border-radius: 4px 8px 2px 4px;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+}
+.nexus-headwings .hwing.left { left: -10px; transform: rotate(-20deg); }
+.nexus-headwings .hwing.right { right: -10px; transform: rotate(20deg) scaleX(-1); }
+
+/* V-06: VEKTOR (Cresta Angular Elegante) */
+.vektor-crest .crest-bar {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 6px;
+  background: #f43f5e;
+  border-radius: 3px;
+  box-shadow: 0 0 8px #f43f5e;
+}
+
+/* E-07: GAIA (Orbes Orbitales Giratorios) */
+.gaia-orbital-halo .orb-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #6366f1;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #6366f1;
+}
+.gaia-orbital-halo .orb-dot.left { top: -6px; left: 15%; animation: orbPulse 2s infinite alternate; }
+.gaia-orbital-halo .orb-dot.right { top: -6px; right: 15%; animation: orbPulse 2s infinite alternate 1s; }
 
 .head-gloss {
   position: absolute;
@@ -181,12 +196,12 @@
   pointer-events: none;
 }
 
-/* ==================== VISOR DIGITAL ==================== */
+/* ==================== VISOR NEGRO BRILLANTE ==================== */
 .robot-visor {
   width: 78%;
   height: 64%;
-  background: radial-gradient(circle at 50% 40%, #0d1527 0%, #050811 100%);
-  border-radius: 40%;
+  background: radial-gradient(circle at 50% 40%, #111827 0%, #030712 100%);
+  border-radius: 46% 46% 44% 44% / 52% 52% 46% 46%;
   border: 2px solid #1e293b;
   position: relative;
   display: flex;
@@ -194,7 +209,7 @@
   justify-content: center;
   box-shadow:
     inset 0 4px 10px rgba(0, 0, 0, 0.8),
-    0 0 10px rgba(0, 0, 0, 0.5);
+    0 0 12px rgba(0, 0, 0, 0.4);
   overflow: hidden;
 }
 
@@ -210,176 +225,130 @@
   z-index: 5;
 }
 
-/* ==================== GEOMETRÍAS FACIALES (VISORES LED) ==================== */
-
-/* 1. CURIO: Visor Círculo Monocular */
-.visor-eye-circle {
-  width: 38px;
-  height: 38px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: translate(var(--mouse-x), var(--mouse-y));
-}
-.reticle-ring {
+/* ==================== OJOS NEÓN AMIGABLES Y EXPRESIVOS ==================== */
+.robot-friendly-eyes {
   width: 100%;
   height: 100%;
-  border: 2px solid var(--unit-primary);
-  border-radius: 50%;
-  box-shadow: 0 0 8px var(--unit-primary);
-  animation: reticlePulse 3s infinite ease-in-out;
-}
-.lens-center-dot {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  background: var(--unit-accent);
-  border-radius: 50%;
-  box-shadow: 0 0 10px var(--unit-accent);
-}
-
-/* 2. HELIX: Visor Cromosoma / Pares de Bases */
-.visor-eye-chromosome {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-around;
+  padding: 0 14%;
   transform: translate(var(--mouse-x), var(--mouse-y));
-}
-.base-pair {
-  width: 6px;
-  height: 24px;
-  background: var(--unit-primary);
-  border-radius: 3px;
-  box-shadow: 0 0 8px var(--unit-primary);
-  animation: dnaScan 1.6s ease-in-out infinite alternate;
-}
-.bp-right { animation-delay: 0.8s; }
-.base-node {
-  width: 8px;
-  height: 8px;
-  background: var(--unit-accent);
-  border-radius: 50%;
-  box-shadow: 0 0 6px var(--unit-accent);
+  transition: transform 120ms ease-out;
 }
 
-/* 3. DATUM: Visor Matriz 4x4 / Histogramas */
-.visor-eye-matrix {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 24px;
-  transform: translate(var(--mouse-x), var(--mouse-y));
-}
-.matrix-bar {
-  width: 6px;
-  background: var(--unit-primary);
-  border-radius: 2px;
-  box-shadow: 0 0 6px var(--unit-primary);
-  animation: matrixEqualizer 1.2s ease-in-out infinite alternate;
-}
-.matrix-bar.b1 { height: 40%; animation-delay: 0.1s; }
-.matrix-bar.b2 { height: 85%; animation-delay: 0.4s; }
-.matrix-bar.b3 { height: 60%; animation-delay: 0.2s; }
-.matrix-bar.b4 { height: 100%; animation-delay: 0.5s; }
-
-/* 4. SYNAPSE: Visor Triángulo Neural */
-.visor-eye-triangle {
+.friendly-eye {
   width: 32px;
-  height: 32px;
+  height: 34px;
+  background: radial-gradient(circle at 45% 35%, #ffffff 0%, var(--unit-accent) 40%, var(--unit-primary) 100%);
+  border-radius: 50% 50% 45% 45%;
+  box-shadow:
+    0 0 14px var(--unit-primary),
+    0 0 24px var(--unit-accent),
+    inset 0 0 4px #ffffff;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: translate(var(--mouse-x), var(--mouse-y));
+  animation: eyeBreathe 3.5s infinite ease-in-out;
 }
-.neural-triangle-pulse {
-  width: 0;
-  height: 0;
-  border-left: 14px solid transparent;
-  border-right: 14px solid transparent;
-  border-top: 24px solid var(--unit-primary);
-  filter: drop-shadow(0 0 6px var(--unit-primary));
-  opacity: 0.85;
-}
-.synapse-node {
+
+.eye-sparkle {
   position: absolute;
-  top: 8px;
-  width: 6px;
-  height: 6px;
+  top: 18%;
+  left: 20%;
+  width: 8px;
+  height: 8px;
   background: #ffffff;
   border-radius: 50%;
-  box-shadow: 0 0 8px #ffffff;
+  box-shadow: 0 0 4px #ffffff;
 }
 
-/* 5. NEXUS: Visor Chevron / Rayo */
-.visor-eye-chevron {
-  display: flex;
-  gap: 3px;
-  transform: translate(var(--mouse-x), var(--mouse-y));
+/* Formas y estilos específicos de los ojos según el Robot */
+/* 1. CURIO (Ojos grandes redondos y curiosos) */
+.visor-curio .friendly-eye {
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
 }
-.chev {
-  width: 6px;
-  height: 18px;
+
+/* 2. HELIX (Ojos bio almendrados amables) */
+.visor-helix .friendly-eye {
+  border-radius: 45% 55% 45% 55%;
+}
+
+/* 3. DATUM (Ojos rectangulares redondeados de robot kawaii) */
+.visor-datum .friendly-eye {
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+}
+
+/* 4. SYNAPSE (Ojos lúcidos brillantes) */
+.visor-synapse .friendly-eye {
+  border-radius: 50% 50% 35% 35%;
+  box-shadow: 0 0 18px var(--unit-primary), 0 0 30px var(--unit-accent);
+}
+
+/* 5. NEXUS (Ojos dinámicos con corte exterior) */
+.visor-nexus .friendly-eye.left { border-radius: 40% 60% 40% 60%; }
+.visor-nexus .friendly-eye.right { border-radius: 60% 40% 60% 40%; }
+
+/* 6. VEKTOR (Ojos atentos en forma de diamante suave) */
+.visor-vektor .friendly-eye {
+  border-radius: 30% 70% 30% 70% / 70% 30% 70% 30%;
+}
+
+/* 7. GAIA (Ojos cósmicos brillantes y amables) */
+.visor-gaia .friendly-eye {
+  border-radius: 50%;
+}
+
+/* ==================== MEJILLAS SONROJADAS AMIGABLES ==================== */
+.robot-cheeks {
+  position: absolute;
+  bottom: 12%;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 16%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.robot-cheeks .cheek {
+  width: 12px;
+  height: 6px;
   background: var(--unit-primary);
-  transform: skewX(-20deg);
-  border-radius: 2px;
-  box-shadow: 0 0 6px var(--unit-primary);
-  animation: chevFlow 1.5s infinite linear;
-}
-.chev.c1 { opacity: 0.4; }
-.chev.c2 { opacity: 0.8; }
-.chev.c3 { opacity: 1; }
-
-/* 6. VEKTOR: Visor Retícula / Diamante */
-.visor-eye-reticle {
-  width: 32px;
-  height: 32px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: translate(var(--mouse-x), var(--mouse-y));
-}
-.diamond-target {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--unit-primary);
-  transform: rotate(45deg);
+  border-radius: 50%;
+  filter: blur(2px);
   box-shadow: 0 0 8px var(--unit-primary);
 }
-.target-crosshair {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background: var(--unit-accent);
-  border-radius: 50%;
-  box-shadow: 0 0 8px var(--unit-accent);
+
+#mascota.mood-feliz .robot-cheeks,
+#mascota.mood-exito .robot-cheeks {
+  opacity: 0.7;
 }
 
-/* 7. GAIA: Visor Fractal / Orbital */
-.visor-eye-fractal {
-  width: 36px;
-  height: 36px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: translate(var(--mouse-x), var(--mouse-y));
+/* Expresiones según Mood */
+#mascota.mood-feliz .friendly-eye,
+#mascota.mood-exito .friendly-eye {
+  height: 20px;
+  border-radius: 50% 50% 10% 10%;
+  transform: translateY(-2px);
 }
-.fractal-ring {
-  position: absolute;
-  border: 2px dashed var(--unit-primary);
-  border-radius: 50%;
+
+#mascota.mood-duda .friendly-eye.left {
+  transform: translateY(-3px) rotate(-6deg);
 }
-.fractal-ring.r1 { width: 32px; height: 32px; animation: orbitalSpin 8s linear infinite; }
-.fractal-ring.r2 { width: 20px; height: 20px; border-style: solid; opacity: 0.6; }
-.fractal-core {
-  width: 8px;
-  height: 8px;
-  background: #fef08a;
-  border-radius: 50%;
-  box-shadow: 0 0 10px #fef08a;
+#mascota.mood-duda .friendly-eye.right {
+  transform: translateY(2px) scaleY(0.85);
+}
+
+#mascota.mood-dormido .friendly-eye {
+  height: 6px;
+  border-radius: 3px;
 }
 
 /* ==================== AUDIO ONDA AL HABLAR ==================== */
@@ -448,7 +417,7 @@
 }
 
 .chest-core {
-  width: 58px;
+  width: 62px;
   height: 22px;
   background: #0f172a;
   border-radius: 12px;
@@ -529,29 +498,29 @@
   50% { transform: translateY(-8px); }
 }
 
+@keyframes eyeBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+@keyframes curioBlink {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; filter: drop-shadow(0 0 6px #38bdf8); }
+}
+
+@keyframes haloFloat {
+  0% { transform: translateY(0) rotateX(60deg); }
+  100% { transform: translateY(-4px) rotateX(60deg); }
+}
+
+@keyframes orbPulse {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(1.2); opacity: 1; }
+}
+
 @keyframes auraPulse {
   0% { transform: scale(0.95); opacity: 0.18; }
   100% { transform: scale(1.05); opacity: 0.32; }
-}
-
-@keyframes reticlePulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-}
-
-@keyframes dnaScan {
-  0% { height: 12px; opacity: 0.5; }
-  100% { height: 26px; opacity: 1; }
-}
-
-@keyframes matrixEqualizer {
-  0% { height: 20%; }
-  100% { height: 95%; }
-}
-
-@keyframes orbitalSpin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }
 
 @keyframes waveBounce {

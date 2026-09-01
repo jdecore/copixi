@@ -95,80 +95,68 @@ export function Mascota({ mood = 'neutro', subtitulo = '', size, onClick, varian
           <div className="robot-head-shell">
             <div className="head-gloss" aria-hidden />
             
-            {/* Chasis específico por Robot */}
-            {activeUnitId === 'curio' && <div className="curio-lens-rim" aria-hidden />}
-            {activeUnitId === 'helix' && <div className="helix-nanotubes" aria-hidden><span /><span /></div>}
-            {activeUnitId === 'datum' && <div className="datum-server-ridges" aria-hidden><span /><span /><span /></div>}
-            {activeUnitId === 'synapse' && <div className="synapse-neural-filaments" aria-hidden><span /><span /></div>}
-            {activeUnitId === 'nexus' && <div className="nexus-wings" aria-hidden><span /><span /></div>}
-            {activeUnitId === 'vektor' && <div className="vektor-bevel" aria-hidden />}
-            {activeUnitId === 'gaia' && <div className="gaia-orbital-ring" aria-hidden />}
+            {/* Chasis y orejitas/sensores únicos y tiernos por robot */}
+            {activeUnitId === 'curio' && (
+              <div className="curio-antennae" aria-hidden>
+                <span className="antenna-stalk" /><span className="antenna-bulb" />
+              </div>
+            )}
+            {activeUnitId === 'helix' && (
+              <div className="helix-fins" aria-hidden>
+                <span className="fin left" /><span className="fin right" />
+              </div>
+            )}
+            {activeUnitId === 'datum' && (
+              <div className="datum-ears" aria-hidden>
+                <span className="ear left" /><span className="ear right" />
+              </div>
+            )}
+            {activeUnitId === 'synapse' && (
+              <div className="synapse-halo" aria-hidden>
+                <span className="halo-ring" />
+              </div>
+            )}
+            {activeUnitId === 'nexus' && (
+              <div className="nexus-headwings" aria-hidden>
+                <span className="hwing left" /><span className="hwing right" />
+              </div>
+            )}
+            {activeUnitId === 'vektor' && (
+              <div className="vektor-crest" aria-hidden>
+                <span className="crest-bar" />
+              </div>
+            )}
+            {activeUnitId === 'gaia' && (
+              <div className="gaia-orbital-halo" aria-hidden>
+                <span className="orb-dot left" /><span className="orb-dot right" />
+              </div>
+            )}
 
-            <div className={`robot-visor visor-shape-${robotMeta.visorType}`}>
+            <div className={`robot-visor visor-${activeUnitId}`}>
               <div className="visor-glare" aria-hidden />
 
-              {/* 1. CURIO: Visor Monocular Circular */}
-              {robotMeta.visorType === 'circle' && (
-                <div className="visor-eye-circle">
-                  <div className="reticle-ring" />
-                  <div className="lens-center-dot" />
+              {/* Ojos Neón Expresivos y Amigables (tipo EVE / WALL-E) con personalidad por Robot */}
+              <div className="robot-friendly-eyes">
+                <div className="friendly-eye left">
+                  <div className="eye-pupil" />
+                  <div className="eye-sparkle" />
+                  {/* Glifo de especialidad sutil en el ojo */}
+                  <span className="eye-symbol" />
                 </div>
-              )}
-
-              {/* 2. HELIX: Visor Cromosoma en X / Pares de bases */}
-              {robotMeta.visorType === 'chromosome' && (
-                <div className="visor-eye-chromosome">
-                  <span className="base-pair bp-left" />
-                  <span className="base-node node-center" />
-                  <span className="base-pair bp-right" />
+                <div className="friendly-eye right">
+                  <div className="eye-pupil" />
+                  <div className="eye-sparkle" />
+                  <span className="eye-symbol" />
                 </div>
-              )}
+              </div>
 
-              {/* 3. DATUM: Visor Matriz de Puntos 4x4 */}
-              {robotMeta.visorType === 'matrix4x4' && (
-                <div className="visor-eye-matrix">
-                  <span className="matrix-bar b1" />
-                  <span className="matrix-bar b2" />
-                  <span className="matrix-bar b3" />
-                  <span className="matrix-bar b4" />
-                </div>
-              )}
+              {/* Mejillas sonrojadas amigables en estado feliz / éxito */}
+              <div className="robot-cheeks" aria-hidden>
+                <span className="cheek left" />
+                <span className="cheek right" />
+              </div>
 
-              {/* 4. SYNAPSE: Visor Triángulo Neural */}
-              {robotMeta.visorType === 'triangle' && (
-                <div className="visor-eye-triangle">
-                  <div className="neural-triangle-pulse" />
-                  <div className="synapse-node" />
-                </div>
-              )}
-
-              {/* 5. NEXUS: Visor Chevron / Rayo */}
-              {robotMeta.visorType === 'chevron' && (
-                <div className="visor-eye-chevron">
-                  <span className="chev c1" />
-                  <span className="chev c2" />
-                  <span className="chev c3" />
-                </div>
-              )}
-
-              {/* 6. VEKTOR: Visor Retícula / Diamante */}
-              {robotMeta.visorType === 'reticle' && (
-                <div className="visor-eye-reticle">
-                  <div className="diamond-target" />
-                  <div className="target-crosshair" />
-                </div>
-              )}
-
-              {/* 7. GAIA: Visor Fractal / Anillo Orbital */}
-              {robotMeta.visorType === 'fractal' && (
-                <div className="visor-eye-fractal">
-                  <div className="fractal-ring r1" />
-                  <div className="fractal-ring r2" />
-                  <div className="fractal-core" />
-                </div>
-              )}
-
-              {/* Audio wave común interactiva al hablar */}
+              {/* Onda de audio al hablar */}
               <div className="visor-audio-wave" aria-hidden>
                 <span className="wave-bar" />
                 <span className="wave-bar" />
@@ -180,7 +168,7 @@ export function Mascota({ mood = 'neutro', subtitulo = '', size, onClick, varian
           </div>
         </div>
 
-        {/* Cuerpo del Robot */}
+        {/* Cuerpo del Robot Flotante */}
         <div className={`robot-body body-shape-${activeUnitId}`}>
           <div className="robot-body-shell">
             <div className="body-gloss" aria-hidden />
